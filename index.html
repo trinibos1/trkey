@@ -1,0 +1,1470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trkey Configurator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        /* Custom scrollbar styling for Tailwind's custom-scrollbar class */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #3f3f46; /* zinc-700 */
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #ef4444; /* red-500 */
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #dc2626; /* red-600 */
+        }
+        /* Allow body and root to scroll */
+        html, body, #root {
+            min-height: 100%; /* Ensure they take at least full height, but can grow */
+            margin: 0;
+            /* Removed overflow: hidden; */
+        }
+    </style>
+</head>
+<body class="font-inter">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // All React component code consolidated here
+
+        // Constants with ALL shortcuts from the PDF, adapted for CircuitPython Keycode names
+        const presets = {
+            "BASIC": [
+                { combo: "M", description: "Move" },
+                { combo: "V", description: "View/Via" },
+                { combo: "R", description: "Rotate/Reload" },
+                { combo: "DELETE", description: "Delete/Zoom Out/Respawn" }, // Renamed from Del
+                { combo: "CONTROL_Z", description: "Undo" }, // Renamed from Ctrl+Z
+                { combo: "CONTROL_Y", description: "Redo" }, // Renamed from Ctrl+Y
+                { combo: "F1", description: "Help/Camera" },
+                { combo: "F2", description: "Rename/Toggle Cockpit" },
+                { combo: "F3", description: "Search/Chase Camera/Record" },
+                { combo: "L", description: "Line/Headlights" },
+                { combo: "E", description: "Extrude/Move Up/Switch Soldier" },
+                { combo: "P", description: "Project/Place Component/Print" },
+                { combo: "C", description: "Circle/Free Camera/Commander Cam/Crouch" },
+                { combo: "Q", description: "Press/Pull/Drop Item/Roll Left/Move Down/Switch Soldier" },
+                { combo: "X", description: "Cut/Look Left/Machine Gun/Lean Left" },
+                { combo: "S", description: "Sketch/Throttle Down/Move Backward" },
+                { combo: "T", description: "Text/Rotate/Target/Pick Weapon/Add Text" },
+                { combo: "CONTROL_C", description: "Copy" },
+                { combo: "CONTROL_V", description: "Paste" },
+                { combo: "CONTROL_X", description: "Cut" },
+                { combo: "CONTROL_S", description: "Save" },
+                { combo: "CONTROL_D", description: "Duplicate" },
+                { combo: "CONTROL_G", description: "Group" },
+                { combo: "CONTROL_U", description: "Ungroup" },
+                { combo: "CONTROL_P", description: "Publish/Command Palette/Print" },
+                { combo: "CONTROL_F", description: "Find" },
+                { combo: "CONTROL_H", description: "Replace/Highlight Net" },
+                { combo: "CONTROL_L", description: "Lock/Align Left" },
+                { combo: "CONTROL_R", description: "Align Right" },
+                { combo: "CONTROL_B", description: "Rebuild Ratsnest/Break Joints/Bold" },
+                { combo: "CONTROL_J", description: "Join Surfaces/Joint" },
+                { combo: "CONTROL_M", description: "Material" },
+                { combo: "CONTROL_K", description: "Link" },
+                { combo: "CONTROL_E", description: "Align Center" },
+                { combo: "ALT_DRAG", description: "Duplicate/Orbit" }, // Custom combo, needs special handling in Pico
+                { combo: "SHIFT_ARROW", description: "Nudge" }, // Changed from Shift+Arrow
+                { combo: "SHIFT_SPACEBAR", description: "Cycle Units/Fire Rocket" }, // Renamed from Shift+Space
+                { combo: "SHIFT_DRAG", description: "Constrain" }, // Custom combo, needs special handling in Pico
+                { combo: "SCROLL", description: "Zoom" }, // Changed from Scroll
+                { combo: "MOUSE_BUTTON_2", description: "Zoom (Mouse 2)" }, // Changed from Mouse 2
+                { combo: "MOUSE_BUTTON_1", description: "Fire Guns/Click (Mouse 1)" }, // Changed from Mouse 1
+                { combo: "MOUSE_BUTTON_3", description: "Track Enemy/Ping (Mouse 3)" }, // Changed from Mouse 3
+                { combo: "TAB", description: "Player List/Scoreboard/Switch Input" },
+                { combo: "ESCAPE", description: "Menu" }, // Renamed from Esc
+                { combo: "ENTER", description: "Chat" },
+                { combo: "BACKSPACE", description: "Leave Vehicle/Suicide" }, // Renamed
+                { combo: "HOME", description: "Reset View" },
+                { combo: "INSERT", description: "Zoom In" }, // Renamed from Ins
+                { combo: "ALT_ENTER", description: "Fullscreen" }, // Custom combo
+                { combo: "ALT", description: "Free Look" },
+                { combo: "MIDDLE_CLICK", description: "Pick Block" }, // Changed from Middle Click
+                { combo: "MOUSE_WHEEL", description: "Scroll Hotbar/Change Weapon" }, // Changed from Mouse wheel
+                { combo: "RIGHT_CLICK", description: "Aim" }, // Changed from Right Click
+            ],
+            "MEDIA": [
+                { combo: "SCAN_PREVIOUS_TRACK", description: "Prev Track" }, // Renamed from KC_MPRV
+                { combo: "SCAN_NEXT_TRACK", description: "Next Track" },     // Renamed from KC_MNXT
+                { combo: "PLAY_PAUSE", description: "Play/Pause" },         // Renamed from KC_MPLY
+                { combo: "MUTE", description: "Mute" },                     // Renamed from KC_MUTE
+                { combo: "VOLUME_INCREMENT", description: "Volume Up" },    // Renamed from KC_VOLU
+                { combo: "VOLUME_DECREMENT", description: "Volume Down" },  // Renamed from KC_VOLD
+            ],
+            "MACRO": [
+                { combo: "MACRO_1", description: "Macro 1" },
+                { combo: "MACRO_2", description: "Macro 2" },
+                { combo: "MACRO_3", description: "Macro 3" },
+            ],
+            "LAYERS": [
+                { combo: "TG_1", description: "Toggle Layer 1" }, // Renamed from TG(1)
+                { combo: "MO_1", description: "Momentary Layer 1" }, // Renamed from MO(1)
+                { combo: "TO_0", description: "To Layer 0" }, // Renamed from TO(0)
+            ],
+            "SPECIAL": [
+                { combo: "POWER", description: "Power" },   // Renamed from KC_PWR
+                { combo: "SLEEP", description: "Sleep" },   // Renamed from KC_SLEP
+                { combo: "WAKE", description: "Wake" },     // Renamed from KC_WAKE
+            ],
+            "QMK LIGHTING": [
+                { combo: "RGB_TOG", description: "RGB Toggle" }, // These are not standard HID, will require custom handling on Pico
+                { combo: "RGB_MOD", description: "RGB Mode" },
+                { combo: "RGB_HUI", description: "Hue Inc" },
+                { combo: "RGB_HUD", description: "Hue Dec" },
+                { combo: "RGB_SAI", description: "Sat Inc" },
+                { combo: "RGB_SAD", description: "Sat Dec" },
+                { combo: "RGB_VAI", description: "Val Inc" },
+                { combo: "RGB_VAD", description: "Val Dec" },
+            ],
+            "MINECRAFT": [
+                { combo: "W", description: "Move Forward" },
+                { combo: "A", description: "Move Left" },
+                { combo: "S", description: "Move Backward" },
+                { combo: "D", description: "Move Right" },
+                { combo: "SPACEBAR", description: "Jump" }, // Renamed from Space
+                { combo: "LEFT_SHIFT", description: "Sneak" }, // Renamed from Shift
+                { combo: "LEFT_CONTROL", description: "Sprint" }, // Renamed from Ctrl
+                { combo: "E", description: "Open Inventory" },
+                { combo: "Q", description: "Drop Selected Item" },
+                { combo: "T", description: "Open Chat" },
+                { combo: "F3_D", description: "Clear Chat" }, // Renamed from F3+D
+                { combo: "F5", description: "Change Camera" },
+                { combo: "F8", description: "Smooth Camera" },
+                { combo: "DOUBLE_SPACE", description: "Fly Toggle (Creative)" }, // Renamed from Double Space
+                { combo: "CONTROL_MIDDLE_CLICK", description: "Copy Block with NBT" }, // Renamed from Ctrl+Middle Click
+                { combo: "SHIFT_LEFT_CLICK", description: "Destroy Instantly (Creative)" }, // Renamed from Shift+Left Click
+                { combo: "SHIFT_RIGHT_CLICK", description: "Edit Command Block (Creative)" }, // Renamed from Shift+Right Click
+                { combo: "SHIFT_CLICK", description: "Move Stack (Inventory)/Craft All" }, // Renamed from Shift+Click
+                { combo: "CONTROL_Q", description: "Drop Stack" }, // Renamed from Ctrl+Q
+                { combo: "CONTROL_CLICK", description: "Select Same Items" }, // Renamed from Ctrl+Click
+                { combo: "DOUBLE_CLICK", description: "Grab All of That Item" }, // Renamed from Double Click
+                { combo: "NUMBER_HOVER", description: "Move Item to Hotbar" }, // Renamed from Number+Hover
+                { combo: "F3_N", description: "Switch Gamemode" }, // Renamed from F3+N
+                { combo: "ALT_F4", description: "Rage Quit" }, // Renamed from Alt+F4
+                { combo: "F3_C", description: "Force Crash" }, // Renamed from F3+C
+                { combo: "F3_A", description: "Reload Chunks" }, // Renamed from F3+A
+            ],
+            "WAR THUNDER": [
+                { combo: "W_S", description: "Throttle Up/Down" }, // Renamed from W/S
+                { combo: "A_D", description: "Rudder Left/Right" }, // Renamed from A/D
+                { combo: "Q_E", description: "Roll Left/Right" }, // Renamed from Q/E
+                { combo: "LEFT_SHIFT", description: "Afterburner/Speed Boost" }, // Renamed from Shift
+                { combo: "LEFT_CONTROL", description: "Air Brake" }, // Renamed from Ctrl
+                { combo: "G", description: "Landing Gear/Grenade" },
+                { combo: "F", description: "Flaps/Interact/Plant/Diffuse" },
+                { combo: "V", description: "View Mode/Binocular View/Melee" },
+                { combo: "C", description: "Free Camera/Commander Cam/Lean Right" },
+                { combo: "X", description: "Look Left/Machine Gun/Lean Left" },
+                { combo: "Z", description: "Look Right" },
+                { combo: "Y", description: "Look Back/Orders" },
+                { combo: "B", description: "Bomb View/Fire Mode" },
+                { combo: "N", description: "Navigation Lights/Night Vision" },
+                { combo: "J", description: "Bail Out" },
+                { combo: "M", description: "Map" },
+                { combo: "T", description: "Target/Mark Enemy" },
+                { combo: "R", description: "Radar/Rangefinder/Reload" },
+                { combo: "H", description: "Head Tracking/Help" },
+                { combo: "SPACEBAR", description: "Fire Main Guns" }, // Renamed from Space
+                { combo: "LEFT_ALT", description: "Fire Secondary" }, // Renamed from Alt
+                { combo: "CONTROL_SPACEBAR", description: "Drop Bomb" }, // Renamed from Ctrl+Space
+                { combo: "F10", description: "Save Replay" },
+                { combo: "ALT_PRINT_SCREEN", description: "Screenshot" }, // Renamed from Alt+PrintScreen
+                { combo: "CONTROL_Y", description: "Chat Channel" }, // Renamed from Ctrl+Y
+                { combo: "CONTROL_G", description: "Gunner View" }, // Renamed from Ctrl+G
+                { combo: "O", description: "Toggle Optics" },
+                { combo: "K", description: "Thermal/IR/Kill Feed" },
+                { combo: "L", description: "Headlights/Flashlight" },
+                { combo: "ONE", description: "Weapon 1" }, // Changed from 1-3
+                { combo: "TWO", description: "Weapon 2" },
+                { combo: "THREE", description: "Weapon 3" },
+                { combo: "U", description: "Repair/Medkit" },
+            ],
+            "ROBLOX STUDIO": [
+                { combo: "CONTROL_S", description: "Save" }, // Renamed from Ctrl+S
+                { combo: "CONTROL_SHIFT_S", description: "Save As" }, // Renamed from Ctrl+Shift+S
+                { combo: "CONTROL_N", description: "New Place" }, // Renamed from Ctrl+N
+                { combo: "CONTROL_O", description: "Open Place" }, // Renamed from Ctrl+O
+                { combo: "CONTROL_Z", description: "Undo" }, // Renamed from Ctrl+Z
+                { combo: "CONTROL_Y", description: "Redo" }, // Renamed from Ctrl+Y
+                { combo: "CONTROL_C", description: "Copy" }, // Renamed from Ctrl+C
+                { combo: "CONTROL_V", description: "Paste" }, // Renamed from Ctrl+V
+                { combo: "CONTROL_X", description: "Cut" }, // Renamed from Ctrl+X
+                { combo: "CONTROL_D", description: "Duplicate" }, // Renamed from Ctrl+D
+                { combo: "CONTROL_G", description: "Group" }, // Renamed from Ctrl+G
+                { combo: "CONTROL_U", description: "Ungroup" }, // Renamed from Ctrl+U
+                { combo: "CONTROL_P", description: "Publish" }, // Renamed from Ctrl+P
+                { combo: "F", description: "Focus Selection" },
+                { combo: "SHIFT_F", description: "Follow Camera" }, // Renamed from Shift+F
+                { combo: "ALT_CLICK", description: "Select Parent" }, // Renamed from Alt+Click
+                { combo: "CONTROL_CLICK", description: "Multi-select" }, // Renamed from Ctrl+Click
+                { combo: "CONTROL_SHIFT_H", description: "View Explorer" }, // Renamed from Ctrl+Shift+H
+                { combo: "CONTROL_SHIFT_X", description: "Properties" }, // Renamed from Ctrl+Shift+X
+                { combo: "CONTROL_SHIFT_C", description: "Output" }, // Renamed from Ctrl+Shift+C
+                { combo: "CONTROL_SHIFT_D", description: "Asset Manager" }, // Renamed from Ctrl+Shift+D
+                { combo: "CONTROL_SHIFT_E", description: "Toolbox/Export" }, // Renamed from Ctrl+Shift+E
+                { combo: "W", description: "Camera Move Forward" },
+                { combo: "A", description: "Camera Move Left" },
+                { combo: "S", description: "Camera Move Backward" },
+                { combo: "D", description: "Camera Move Right" },
+                { combo: "E", description: "Move Up" },
+                { combo: "Q", description: "Move Down" },
+                { combo: "T", description: "Rotate" },
+                { combo: "R", description: "Resize" },
+                { combo: "G", description: "Move" },
+                { combo: "CONTROL_T", description: "Anchor" }, // Renamed from Ctrl+T
+                { combo: "CONTROL_L", description: "Lock" }, // Renamed from Ctrl+L
+                { combo: "CONTROL_B", description: "Break Joints" }, // Renamed from Ctrl+B
+                { combo: "CONTROL_J", description: "Join Surfaces" }, // Renamed from Ctrl+J
+                { combo: "CONTROL_M", description: "Material" }, // Renamed from Ctrl+M
+                { combo: "CONTROL_SHIFT_M", description: "Model" }, // Renamed from Ctrl+Shift+M
+                { combo: "SHIFT_DRAG", description: "Constrain" }, // Renamed from Shift+Drag
+                { combo: "ARROW_KEYS", description: "Nudge" }, // Renamed from Arrow Keys
+                { combo: "CONTROL_ONE", description: "Tool 1" }, // Changed from Ctrl+1/2/3/4
+                { combo: "CONTROL_TWO", description: "Tool 2" },
+                { combo: "CONTROL_THREE", description: "Tool 3" },
+                { combo: "CONTROL_FOUR", description: "Tool 4" },
+                { combo: "ALT_SHIFT_E", description: "Export" }, // Renamed from Alt+Shift+E
+                { combo: "CONTROL_ALT_T", description: "Terrain Editor" }, // Renamed from Ctrl+Alt+T
+                { combo: "CONTROL_SHIFT_R", description: "Run" }, // Renamed from Ctrl+Shift+R
+                { combo: "CONTROL_SHIFT_T", description: "Test" }, // Renamed from Ctrl+Shift+T
+                { combo: "F7", description: "Play Solo" },
+                { combo: "F5", description: "Play" },
+                { combo: "F6", description: "Server" },
+                { combo: "F8", description: "Player" },
+                { combo: "CONTROL_Q", description: "Quit" }, // Renamed from Ctrl+Q
+                { combo: "CONTROL_SHIFT_F", description: "Search All" }, // Renamed from Ctrl+Shift+F
+            ],
+            "ENLISTED": [
+                { combo: "W", description: "Move Forward" },
+                { combo: "A", description: "Move Left" },
+                { combo: "S", description: "Move Backward" },
+                { combo: "D", description: "Move Right" },
+                { combo: "SPACEBAR", description: "Jump" }, // Renamed from Space
+                { combo: "LEFT_SHIFT", description: "Sprint" }, // Renamed from Shift
+                { combo: "LEFT_CONTROL", description: "Crouch" }, // Renamed from Ctrl
+                { combo: "Z", description: "Prone" },
+                { combo: "X", description: "Lean Left" },
+                { combo: "C", description: "Lean Right" },
+                { combo: "F", description: "Interact" },
+                { combo: "R", description: "Reload" },
+                { combo: "G", description: "Grenade" },
+                { combo: "T", description: "Pick Weapon" },
+                { combo: "V", description: "Melee" },
+                { combo: "B", description: "Fire Mode" },
+                { combo: "Q_E", description: "Switch Soldier" }, // Renamed from Q/E
+                { combo: "TAB", description: "Scoreboard" },
+                { combo: "M", description: "Map" },
+                { combo: "N", description: "Night Vision" },
+                { combo: "Y", description: "Orders" },
+                { combo: "L", description: "Flashlight" },
+                { combo: "ESCAPE", description: "Menu" }, // Renamed from Esc
+                { combo: "MOUSE_BUTTON_1", description: "Fire" }, // Renamed from Click
+                { combo: "RIGHT_CLICK", description: "Aim" }, // Renamed from Right Click
+                { combo: "SCROLL", description: "Change Weapon" }, // Renamed from Scroll
+                { combo: "ONE", description: "Weapon 1" }, // Changed from 1-3
+                { combo: "TWO", description: "Weapon 2" },
+                { combo: "THREE", description: "Weapon 3" },
+                { combo: "H", description: "Help" },
+                { combo: "LEFT_ALT", description: "Free Look" }, // Renamed from Alt
+                { combo: "CONTROL_SHIFT", description: "Walk" }, // Renamed from Ctrl+Shift
+                { combo: "F1", description: "Camera" },
+                { combo: "ALT_M", description: "Minimap" }, // Renamed from Alt+M
+                { combo: "CONTROL_R", description: "Reload Prone" }, // Renamed from Ctrl+R
+                { combo: "CONTROL_F1", description: "Switch Class" }, // Renamed from Ctrl+F1
+                { combo: "ALT_V", description: "Change View" }, // Renamed from Alt+V
+                { combo: "MIDDLE_CLICK", description: "Ping" }, // Renamed from Middle Mouse
+                { combo: "HOLD_T", description: "Mark Enemy" }, // Renamed from Hold T
+                { combo: "HOLD_SHIFT", description: "Sprint Long" }, // Renamed from Hold Shift
+                { combo: "HOLD_F", description: "Plant/Diffuse" }, // Renamed from Hold F
+                { combo: "CONTROL_NUMBER", description: "Squad Command" }, // Renamed from Ctrl+Number
+                { combo: "SHIFT_ONE", description: "Formation 1" }, // Changed from Shift+1-4
+                { combo: "SHIFT_TWO", description: "Formation 2" },
+                { combo: "SHIFT_THREE", description: "Formation 3" },
+                { combo: "SHIFT_FOUR", description: "Formation 4" },
+                { combo: "K", description: "Kill Feed" },
+                { combo: "U", description: "Medkit" },
+                { combo: "ONE", description: "Inventory" },
+                { combo: "BACKSPACE", description: "Suicide" },
+                { combo: "DELETE", description: "Respawn" }, // Renamed from Del
+                { combo: "F3", description: "Record" },
+                { combo: "F12", description: "Screenshot" },
+                { combo: "GRAVE_ACCENT", description: "Console" }, // Renamed from Tilde
+                { combo: "CONTROL_ALT_DELETE", description: "Force Quit" }, // Renamed from Ctrl+Alt+Delete
+            ],
+            "LINUX": [
+                { combo: "CONTROL_ALT_T", description: "Open Terminal" }, // Renamed from Ctrl+Alt+T
+                { combo: "MACRO_LS", description: "List Directory Contents" }, // Renamed from ls
+                { combo: "MACRO_CD", description: "Change Directory" }, // Renamed from cd
+                { combo: "MACRO_PWD", description: "Print Working Directory" }, // Renamed from pwd
+                { combo: "MACRO_MKDIR", description: "Make Directory" }, // Renamed from mkdir
+                { combo: "MACRO_RM", description: "Remove File/Directory" }, // Renamed from rm
+                { combo: "MACRO_CP", description: "Copy File" }, // Renamed from cp
+                { combo: "MACRO_MV", description: "Move File" }, // Renamed from mv
+                { combo: "MACRO_SUDO", description: "Run Command as Superuser" }, // Renamed from sudo
+                { combo: "MACRO_MAN", description: "Manual Pages" }, // Renamed from man
+                { combo: "MACRO_TOP", description: "Show Running Processes" }, // Renamed from top
+                { combo: "MACRO_PS", description: "List Processes" }, // Renamed from ps
+                { combo: "MACRO_KILL", description: "Terminate Process" }, // Renamed from kill
+                { combo: "MACRO_GREP", description: "Search Text" }, // Renamed from grep
+                { combo: "MACRO_CHMOD", description: "Change Permissions" }, // Renamed from chmod
+                { combo: "MACRO_CHOWN", description: "Change Ownership" }, // Renamed from chown
+                { combo: "MACRO_NANO", description: "Text Editor" }, // Renamed from nano
+                { combo: "MACRO_VIM", description: "Vi Improved Editor" }, // Renamed from vim
+                { combo: "MACRO_DF", description: "Disk Usage" }, // Renamed from df
+                { combo: "MACRO_DU", description: "Directory Usage" }, // Renamed from du
+                { combo: "MACRO_TAR", description: "Archive Files" }, // Renamed from tar
+                { combo: "MACRO_ZIP_UNZIP", description: "Compress/Extract" }, // Renamed from zip/unzip
+                { combo: "MACRO_SSH", description: "Remote Access" }, // Renamed from ssh
+                { combo: "MACRO_SCP", description: "Secure Copy" }, // Renamed from scp
+                { combo: "MACRO_WGET", description: "Download Files" }, // Renamed from wget
+                { combo: "MACRO_CURL", description: "Transfer Data" }, // Renamed from curl
+                { combo: "MACRO_ALIAS", description: "Create Shortcut Command" }, // Renamed from alias
+                { combo: "MACRO_HISTORY", description: "Show Command History" }, // Renamed from history
+                { combo: "MACRO_CLEAR", description: "Clear Terminal" }, // Renamed from clear
+                { combo: "MACRO_REBOOT", description: "Restart System" }, // Renamed from reboot
+                { combo: "MACRO_SHUTDOWN", description: "Shutdown System" }, // Renamed from shutdown
+                { combo: "MACRO_UPTIME", description: "Show System Uptime" }, // Renamed from uptime
+            ],
+            "CODING IDE (VSCode Style)": [
+                { combo: "CONTROL_P", description: "Quick Open File" }, // Renamed from Ctrl+P
+                { combo: "CONTROL_SHIFT_P", description: "Command Palette" }, // Renamed from Ctrl+Shift+P
+                { combo: "CONTROL_GRAVE_ACCENT", description: "Terminal Toggle" }, // Renamed from Ctrl+`
+                { combo: "CONTROL_B", description: "Sidebar Toggle" }, // Renamed from Ctrl+B
+                { combo: "CONTROL_J", description: "Panel Toggle" }, // Renamed from Ctrl+J
+                { combo: "CONTROL_SHIFT_E", description: "Explorer" }, // Renamed from Ctrl+Shift+E
+                { combo: "CONTROL_SHIFT_F", description: "Search in Files" }, // Renamed from Ctrl+Shift+F
+                { combo: "CONTROL_SHIFT_G", description: "Git" }, // Renamed from Ctrl+Shift+G
+                { combo: "CONTROL_SHIFT_D", description: "Debug" }, // Renamed from Ctrl+Shift+D
+                { combo: "CONTROL_SHIFT_X", description: "Extensions" }, // Renamed from Ctrl+Shift+X
+                { combo: "CONTROL_SPACEBAR", description: "Trigger Suggestion" }, // Renamed from Ctrl+Space
+                { combo: "CONTROL_FORWARD_SLASH", description: "Comment Line" }, // Renamed from Ctrl+/
+                { combo: "ALT_UP_ARROW", description: "Move Line Up" }, // Renamed from Alt+Up
+                { combo: "ALT_DOWN_ARROW", description: "Move Line Down" }, // Renamed from Alt+Down
+                { combo: "SHIFT_ALT_DOWN_ARROW", description: "Copy Line Down" }, // Renamed from Shift+Alt+Down
+                { combo: "CONTROL_SHIFT_K", description: "Delete Line" }, // Renamed from Ctrl+Shift+K
+                { combo: "CONTROL_D", description: "Select Next Occurrence" }, // Renamed from Ctrl+D
+                { combo: "CONTROL_L", description: "Select Line" }, // Renamed from Ctrl+L
+                { combo: "CONTROL_ENTER", description: "Insert Line Below" }, // Renamed from Ctrl+Enter
+                { combo: "CONTROL_SHIFT_ENTER", description: "Insert Line Above" }, // Renamed from Ctrl+Shift+Enter
+                { combo: "CONTROL_SHIFT_RIGHT_BRACKET", description: "Jump to Bracket" }, // Renamed from Ctrl+Shift+]
+                { combo: "CONTROL_TAB", description: "Next Editor" }, // Renamed from Ctrl+Tab
+                { combo: "CONTROL_SHIFT_TAB", description: "Previous Editor" }, // Renamed from Ctrl+Shift+Tab
+                { combo: "CONTROL_W", description: "Close Editor" }, // Renamed from Ctrl+W
+            ],
+            "KICAD": [
+                { combo: "CONTROL_N", description: "New Project" }, // Renamed from Ctrl+N
+                { combo: "CONTROL_O", description: "Open Project" }, // Renamed from Ctrl+O
+                { combo: "CONTROL_S", description: "Save" }, // Renamed from Ctrl+S
+                { combo: "CONTROL_Z", description: "Undo" }, // Renamed from Ctrl+Z
+                { combo: "CONTROL_Y", description: "Redo" }, // Renamed from Ctrl+Y
+                { combo: "CONTROL_C", description: "Copy" }, // Renamed from Ctrl+C
+                { combo: "CONTROL_V", description: "Paste" }, // Renamed from Ctrl+V
+                { combo: "CONTROL_X", description: "Cut" }, // Renamed from Ctrl+X
+                { combo: "DELETE", description: "Delete" }, // Renamed from Del
+                { combo: "R", description: "Rotate" },
+                { combo: "M", description: "Move" },
+                { combo: "E", description: "Edit Properties" },
+                { combo: "W", description: "Wire" },
+                { combo: "P", description: "Place Component" },
+                { combo: "SHIFT_SPACEBAR", description: "Cycle Units" }, // Renamed from Shift+Space
+                { combo: "PAGE_UP", description: "Zoom In" }, // Renamed from Page Up
+                { combo: "PAGE_DOWN", description: "Zoom Out" }, // Renamed from Page Down
+                { combo: "CONTROL_SCROLL", description: "Zoom" }, // Renamed from Ctrl+Scroll
+                { combo: "F1", description: "Pan Direction 1" },
+                { combo: "F2", description: "Pan Direction 2" },
+                { combo: "F3", description: "Pan Direction 3" },
+                { combo: "F4", description: "Pan Direction 4" },
+                { combo: "SPACEBAR", description: "Reset Origin" }, // Renamed from Space
+                { combo: "ALT_ONE", description: "Layer View 1" }, // Changed from Alt+1-5
+                { combo: "ALT_TWO", description: "Layer View 2" },
+                { combo: "ALT_THREE", description: "Layer View 3" },
+                { combo: "ALT_FOUR", description: "Layer View 4" },
+                { combo: "ALT_FIVE", description: "Layer View 5" },
+                { combo: "CONTROL_B", description: "Rebuild Ratsnest" }, // Renamed from Ctrl+B
+                { combo: "CONTROL_H", description: "Highlight Net" }, // Renamed from Ctrl+H
+            ],
+            "FUSION 360": [
+                { combo: "S", description: "Toolbox" },
+                { combo: "L", description: "Line" },
+                { combo: "R", description: "Rectangle" },
+                { combo: "C", description: "Circle" },
+                { combo: "D", description: "Dimension" },
+                { combo: "T", description: "Text" },
+                { combo: "M", description: "Move" },
+                { combo: "Q", description: "Press/Pull" },
+                { combo: "E", description: "Extrude" },
+                { combo: "F", description: "Fillet" },
+                { combo: "SHIFT_S", description: "Sketch Shortcuts" }, // Renamed from Shift+S
+                { combo: "CONTROL_Z", description: "Undo" }, // Renamed from Ctrl+Z
+                { combo: "CONTROL_Y", description: "Redo" }, // Renamed from Ctrl+Y
+                { combo: "CONTROL_C", description: "Copy" }, // Renamed from Ctrl+C
+                { combo: "CONTROL_V", description: "Paste" }, // Renamed from Ctrl+V
+                { combo: "DELETE", description: "Remove" }, // Renamed from Delete
+                { combo: "B", description: "Emboss" },
+                { combo: "J", description: "Joint" },
+                { combo: "H", description: "Hole" },
+                { combo: "G", description: "Grid Settings" },
+                { combo: "TAB", description: "Switch Input" },
+                { combo: "ALT_DRAG", description: "Orbit" }, // Renamed from Alt+Drag
+                { combo: "SHIFT_SCROLL", description: "Pan" }, // Renamed from Shift+Scroll
+                { combo: "SCROLL", description: "Zoom" }, // Renamed from Scroll
+                { combo: "HOME", description: "View Cube" },
+                { combo: "F6", description: "Home View" },
+                { combo: "F7", description: "Slice" },
+                { combo: "CONTROL_ONE", description: "Orthographic View 1" }, // Changed from Ctrl+1/2/3
+                { combo: "CONTROL_TWO", description: "Orthographic View 2" },
+                { combo: "CONTROL_THREE", description: "Orthographic View 3" },
+                { combo: "CONTROL_SHIFT_E", description: "Export" }, // Renamed from Ctrl+Shift+E
+                { combo: "CONTROL_S", description: "Save" }, // Renamed from Ctrl+S
+            ],
+            "CANVA": [
+                { combo: "CONTROL_C", description: "Copy" }, // Renamed from Ctrl+C
+                { combo: "CONTROL_V", description: "Paste" }, // Renamed from Ctrl+V
+                { combo: "CONTROL_X", description: "Cut" }, // Renamed from Ctrl+X
+                { combo: "CONTROL_Z", description: "Undo" }, // Renamed from Ctrl+Z
+                { combo: "CONTROL_Y", description: "Redo" }, // Renamed from Ctrl+Y
+                { combo: "CONTROL_A", description: "Select All" }, // Renamed from Ctrl+A
+                { combo: "DELETE", description: "Remove" }, // Renamed from Delete
+                { combo: "CONTROL_G", description: "Group" }, // Renamed from Ctrl+G
+                { combo: "CONTROL_U", description: "Ungroup" }, // Renamed from Ctrl+U
+                { combo: "CONTROL_D", description: "Duplicate" }, // Renamed from Ctrl+D
+                { combo: "SHIFT_ARROW", description: "Nudge" }, // Renamed from Shift+Arrow
+                { combo: "ALT_DRAG", description: "Duplicate while Dragging" }, // Renamed from Alt+Drag
+                { combo: "T", description: "Add Text" },
+                { combo: "R", description: "Add Rectangle" },
+                { combo: "L", description: "Add Line" },
+                { combo: "C", description: "Add Circle" },
+                { combo: "B", description: "Bold" },
+                { combo: "I", description: "Italic" },
+                { combo: "U", description: "Underline" },
+                { combo: "CONTROL_K", description: "Link" }, // Renamed from Ctrl+K
+                { combo: "CONTROL_SHIFT_K", description: "Unlink" }, // Renamed from Ctrl+Shift+K
+                { combo: "CONTROL_E", description: "Align Center" }, // Renamed from Ctrl+E
+                { combo: "CONTROL_L", description: "Align Left" }, // Renamed from Ctrl+L
+                { combo: "CONTROL_R", description: "Align Right" }, // Renamed from Ctrl+R
+                { combo: "CONTROL_SHIFT_M", description: "Comment" }, // Renamed from Ctrl+Shift+M
+                { combo: "ALT_LEFT_BRACKET", description: "Layer Back" }, // Renamed from Alt+[
+                { combo: "ALT_RIGHT_BRACKET", description: "Layer Front" }, // Renamed from Alt+]
+                { combo: "CONTROL_P", description: "Print" }, // Renamed from Ctrl+P
+                { combo: "CONTROL_S", description: "Save" }, // Renamed from Ctrl+S
+                { combo: "CONTROL_SHIFT_S", description: "Save As" }, // Renamed from Ctrl+Shift+S
+                { combo: "CONTROL_SHIFT_D", description: "Download" }, // Renamed from Ctrl+Shift+D
+            ],
+            "COMMON_HID_KEYS": [ // Added this category for the explicitly provided keymap
+                { combo: "A", description: "A" },
+                { combo: "B", description: "B" },
+                { combo: "C", description: "C" },
+                { combo: "ENTER", description: "Enter" },
+                { combo: "ESCAPE", description: "Escape" },
+                { combo: "TAB", description: "Tab" },
+                { combo: "SPACE", description: "Space" },
+                { combo: "UP", description: "Up Arrow" },
+                { combo: "DOWN", description: "Down Arrow" },
+                { combo: "LEFT", description: "Left Arrow" },
+                { combo: "RIGHT", description: "Right Arrow" },
+                { combo: "VOLUME_UP", description: "Volume Up" },
+                { combo: "VOLUME_DOWN", description: "Volume Down" },
+                { combo: "MUTE", description: "Mute" },
+                { combo: "PLAY_PAUSE", description: "Play/Pause" },
+                { combo: "CTRL_C", description: "Ctrl+C" },
+                { combo: "CTRL_V", description: "Ctrl+V" },
+                { combo: "CTRL_Z", description: "Ctrl+Z" },
+                { combo: "CTRL_X", description: "Ctrl+X" },
+                { combo: "CTRL_S", description: "Ctrl+S" },
+                { combo: "ALT_TAB", description: "Alt+Tab" },
+                { combo: "WIN_D", description: "Win+D" },
+                { combo: "CTRL_SHIFT_ESC", description: "Ctrl+Shift+Esc" }
+            ]
+        };
+
+        const NUM_LAYERS_PICO = 2; // Matches the NUM_LAYERS in the Pico code
+        const initialMultiLayerGrid = Array(NUM_LAYERS_PICO).fill().map(() => Array(3).fill().map(() => Array(3).fill({ tap: null, hold: null })));
+
+
+        // Modal component (formerly from src/components/Modal.js)
+        const Modal = ({ show, title, message, onClose }) => {
+            if (!show) return null;
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
+                    <div className="bg-zinc-800 text-white p-6 rounded-lg shadow-xl max-w-sm w-full border-2 border-red-500">
+                        <h3 className="text-xl font-bold mb-4 text-red-400">{title}</h3>
+                        {message && <p className="mb-4">{message}</p>}
+                        <div className="flex justify-end">
+                            <button
+                                onClick={onClose}
+                                className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-xl shadow-lg transition-colors duration-200"
+                            >
+                                OK
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // Confirmation Modal (formerly from src/components/ConfirmationModal.js)
+        const ConfirmationModal = ({ show, title, message, onConfirm, onCancel }) => {
+            if (!show) return null;
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
+                    <div className="bg-zinc-800 text-white p-6 rounded-lg shadow-xl max-w-sm w-full border-2 border-red-500">
+                        <h3 className="text-xl font-bold mb-4 text-red-400">{title}</h3>
+                        {message && <p className="mb-4">{message}</p>}
+                        <div className="flex justify-end space-x-4">
+                            <button
+                                onClick={onCancel}
+                                className="bg-zinc-600 hover:bg-zinc-700 px-4 py-2 rounded-xl shadow-lg transition-colors duration-200"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={onConfirm}
+                                className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-xl shadow-lg transition-colors duration-200"
+                            >
+                                Confirm
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // Sidebar component (formerly from src/components/Sidebar.js)
+        const Sidebar = ({ activeTab, setActiveTab }) => {
+            const { useState, useEffect } = React; // Ensure React hooks are imported within component scope
+            return (
+                <div className="w-64 bg-zinc-900 p-6 flex flex-col border-r border-zinc-700 shadow-xl">
+                    <div className="text-2xl font-bold text-red-500 mb-8">Trkey</div>
+                    <nav className="flex-grow">
+                        <ul className="space-y-4">
+                            <li>
+                                <a href="#" onClick={() => setActiveTab('keymap')} className={`flex items-center ${activeTab === 'keymap' ? 'text-red-300' : 'text-zinc-400'} hover:text-red-500 font-semibold text-lg transition-colors duration-200`}>
+                                    <svg className="w-6 h-6 mr-3" fill="currentColor" viewBox="0 0 20 20"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path></svg>
+                                    KEYMAP
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#" onClick={() => setActiveTab('macros')} className={`flex items-center ${activeTab === 'macros' ? 'text-red-300' : 'text-zinc-400'} hover:text-white transition-colors duration-200`}>
+                                    <svg className="w-6 h-6 mr-3" fill="currentColor" viewBox="0 0 20 20"><path d="M12 6.293V4a1 1 0 00-1-1H5a1 1 0 00-1 1v10a1 1 0 001 1h6a1 1 0 001-1v-2.293l1.707 1.707a1 1 0 001.414-1.414l-4-4a1 1 0 00-1.414 0l-4 4a1 1 0 001.414 1.414L10 10.414V12a1 1 0 001 1h2a1 1 0 001-1V8.293l1.707 1.707a1 1 0 001.414-1.414l-4-4z"></path></svg>
+                                    MACROS
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#" onClick={() => setActiveTab('controls')} className={`flex items-center ${activeTab === 'controls' ? 'text-red-300' : 'text-zinc-400'} hover:text-white transition-colors duration-200`}>
+                                    <svg className="w-6 h-6 mr-3" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 100-2 1 1 0 000 2zm6-1a1 1 0 100-2 1 1 0 000 2zm-3 8a1 1 0 100-2 1 1 0 000 2z"></path></svg>
+                                    CONTROLS
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#" onClick={() => setActiveTab('save-load')} className={`flex items-center ${activeTab === 'save-load' ? 'text-red-300' : 'text-zinc-400'} hover:text-white transition-colors duration-200`}>
+                                    <svg className="w-6 h-6 mr-3" fill="currentColor" viewBox="0 0 20 20"><path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"></path></svg>
+                                    SAVE + LOAD
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#" onClick={() => setActiveTab('settings')} className={`flex items-center ${activeTab === 'settings' ? 'text-red-300' : 'text-zinc-400'} hover:text-white transition-colors duration-200`}>
+                                    <svg className="w-6 h-6 mr-3" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 00-1 1v1a1 1 0 002 0V3a1 1 0 00-1-1zm4 4a1 1 0 011 1v1a1 1 0 01-2 0V7a1 1 0 011-1zM6 6a1 1 0 00-1 1v1a1 1 0 002 0V7a1 1 0 00-1-1zm0 8a1 1 0 00-1 1v1a1 1 0 002 0v-1a1 1 0 00-1-1zm8 0a1 1 0 00-1 1v1a1 1 0 002 0v-1a1 1 0 00-1-1zm-4 4a1 1 0 00-1 1v1a1 1 0 002 0v-1a1 1 0 00-1-1zM2 10a1 1 0 001 1h1a1 1 0 000-2H3a1 1 0 00-1 1zm14 0a1 1 0 001 1h1a1 1 0 000-2h-1a1 1 0 00-1 1zM7 10a3 3 0 116 0 3 3 0 01-6 0z"></path></svg>
+                                    SETTINGS
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#" onClick={() => setActiveTab('keytester')} className={`flex items-center ${activeTab === 'keytester' ? 'text-red-300' : 'text-zinc-400'} hover:text-white transition-colors duration-200`}>
+                                    <svg className="w-6 h-6 mr-3" fill="currentColor" viewBox="0 0 20 20"><path d="M11 3a1 1 0 10-2 0v1a1 1 0 002 0V3zM14 8a1 1 0 011 1v1a1 1 0 11-2 0V9a1 1 0 011-1zM6 8a1 1 0 00-1 1v1a1 1 0 002 0V9a1 1 0 00-1-1zm0 4a1 1 0 00-1 1v1a1 1 0 002 0v-1a1 1 0 00-1-1zm8 0a1 1 0 00-1 1v1a1 1 0 002 0v-1a1 1 0 00-1-1zm-4 4a1 1 0 00-1 1v1a1 1 0 002 0v-1a1 1 0 00-1-1zM2 10a1 1 0 001 1h1a1 1 0 000-2H3a1 1 0 00-1 1zm14 0a1 1 0 001 1h1a1 1 0 000-2h-1a1 1 0 00-1 1zM7 10a3 3 0 116 0 3 3 0 01-6 0z"></path></svg>
+                                    KEY TESTER
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            );
+        };
+
+        // KeymapGrid component (formerly from src/components/KeymapGrid.js)
+        const KeymapGrid = ({ keymap, handleDrop, handleKeymapDragStart, handleDragEnd, clearKeymapCell, currentLayer, setCurrentLayer, selectedKeymapCell, handleKeymapCellClick }) => {
+            const { useState, useEffect } = React;
+            return (
+                <div className="flex flex-col items-center">
+                    <div className="flex space-x-2 mb-4">
+                        {[...Array(NUM_LAYERS_PICO)].map((_, index) => ( // Assuming NUM_LAYERS_PICO layers
+                            <button
+                                key={`layer-btn-${index}`}
+                                onClick={() => setCurrentLayer(index)}
+                                className={`px-4 py-2 rounded-lg font-semibold transition-colors duration-200
+                                            ${currentLayer === index ? 'bg-red-600 text-white shadow-md' : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600'}`}
+                            >
+                                Layer {index}
+                            </button>
+                        ))}
+                    </div>
+                    <div className="grid grid-cols-3 gap-4 mb-12 w-full max-w-md mx-auto">
+                        {keymap[currentLayer].map((row, rIdx) => ( // Access keymap for currentLayer
+                            row.map((cell, cIdx) => (
+                                <div
+                                    key={`${rIdx}-${cIdx}`}
+                                    className={`relative bg-zinc-700 rounded-xl p-4 h-32 flex flex-col items-center justify-center border-2 border-zinc-600 shadow-md
+                                                hover:border-red-500 transition-all duration-200 cursor-grab
+                                                ${selectedKeymapCell && selectedKeymapCell.row === rIdx && selectedKeymapCell.col === cIdx && selectedKeymapCell.layer === currentLayer ? 'border-blue-500 ring-2 ring-blue-500' : ''}`}
+                                    onDragOver={(e) => e.preventDefault()}
+                                    onDrop={(e) => handleDrop(e, rIdx, cIdx)}
+                                    draggable
+                                    onDragStart={(e) => handleKeymapDragStart(e, cell, rIdx, cIdx)}
+                                    onDragEnd={handleDragEnd}
+                                    onClick={() => handleKeymapCellClick(rIdx, cIdx, currentLayer)} /* Added onClick */
+                                >
+                                    {cell.tap ? (
+                                        <>
+                                            <span className="text-2xl font-bold text-red-300">{cell.tap.combo}</span>
+                                            <span className="text-sm text-zinc-400 text-center mt-1">{cell.tap.description}</span>
+                                        </>
+                                    ) : (
+                                        <span className="text-zinc-500">Drag & Drop Here</span>
+                                    )}
+                                    {(cell.tap || cell.hold) && (
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); clearKeymapCell(rIdx, cIdx); }} /* Stop propagation to prevent cell selection */
+                                            className="absolute top-1 right-1 text-zinc-400 hover:text-red-500 text-sm p-1 rounded-full bg-zinc-600 hover:bg-zinc-500 transition-colors"
+                                            title="Clear cell"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                    )}
+                                </div>
+                            ))
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        // ShortcutPool component (formerly from src/components/ShortcutPool.js)
+        const ShortcutPool = ({ shortcutPool, draggedShortcut, handleShortcutDragStart, handleDragEnd, selectedKeymapCell, handleShortcutClick }) => {
+            const { useState, useEffect, useMemo } = React; // Added useMemo
+            const [searchTerm, setSearchTerm] = useState('');
+            // Initialize selectedCategory to the first key in shortcutPool
+            const [selectedCategory, setSelectedCategory] = useState(Object.keys(shortcutPool)[0]);
+
+            // Filter shortcuts based on selected category and search term
+            const filteredShortcuts = useMemo(() => {
+                if (!selectedCategory) return []; // No category selected yet
+
+                const categoryShortcuts = shortcutPool[selectedCategory] || [];
+                if (!searchTerm) return categoryShortcuts;
+
+                const lowerCaseSearchTerm = searchTerm.toLowerCase();
+                return categoryShortcuts.filter(shortcut =>
+                    shortcut.combo.toLowerCase().includes(lowerCaseSearchTerm) ||
+                    shortcut.description.toLowerCase().includes(lowerCaseSearchTerm)
+                );
+            }, [searchTerm, selectedCategory, shortcutPool]);
+
+            return (
+                <div className="flex flex-col md:flex-row w-full bg-zinc-800 rounded-xl shadow-lg border border-zinc-700 overflow-hidden">
+                    {/* Left Sidebar for Categories */}
+                    <div className="w-full md:w-1/4 bg-zinc-900 p-4 custom-scrollbar overflow-y-auto border-r border-zinc-700">
+                        <h3 className="text-xl font-semibold text-red-300 mb-4">Categories</h3>
+                        <ul className="space-y-2">
+                            {Object.keys(shortcutPool).map(category => (
+                                <li key={category}>
+                                    <button
+                                        onClick={() => setSelectedCategory(category)}
+                                        className={`w-full text-left px-4 py-2 rounded-lg transition-colors duration-200
+                                                    ${selectedCategory === category ? 'bg-red-600 text-white font-bold' : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600'}`}
+                                    >
+                                        {category}
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+
+                    {/* Right Main Content Area for Search and Shortcuts */}
+                    <div className="flex-1 flex flex-col p-4">
+                        {/* Search Bar */}
+                        <div className="relative w-full mb-6">
+                            <input
+                                type="text"
+                                placeholder="Search shortcuts..."
+                                className="w-full p-3 pl-10 rounded-xl bg-zinc-700 text-white border border-zinc-600 focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all duration-200"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                            <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-zinc-400" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd"></path></svg>
+                        </div>
+
+                        {/* Shortcuts Grid */}
+                        <div className="flex-1 grid grid-cols-2 md:grid-cols-3 gap-4 custom-scrollbar overflow-y-auto pr-2">
+                            {filteredShortcuts.length > 0 ? (
+                                filteredShortcuts.map((shortcut, sIdx) => (
+                                    <div
+                                        key={`${selectedCategory}-${sIdx}`} // Ensure unique key
+                                        className={`bg-zinc-600 rounded-lg p-3 flex flex-col items-center justify-center cursor-pointer text-center /* Changed cursor to pointer */
+                                                    ${draggedShortcut === shortcut ? 'opacity-50 border-red-500 border-2' : 'border-2 border-zinc-600'}
+                                                    ${selectedKeymapCell ? 'hover:bg-blue-700 hover:border-blue-400' : 'hover:bg-zinc-500 hover:border-red-400'} /* Conditional hover */
+                                                    transition-all duration-200`}
+                                        draggable
+                                        onDragStart={(e) => handleShortcutDragStart(e, shortcut)}
+                                        onDragEnd={handleDragEnd}
+                                        onClick={() => handleShortcutClick(shortcut)} /* Added onClick */
+                                    >
+                                        <span className="font-medium text-lg">{shortcut.combo}</span>
+                                        <span className="text-sm text-zinc-300">{shortcut.description}</span>
+                                    </div>
+                                ))
+                            ) : (
+                                <p className="text-zinc-400 text-lg col-span-full text-center">No shortcuts found in "{selectedCategory}" matching "{searchTerm}".</p>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // MacroManagement component (formerly from src/components/MacroManagement.js)
+        const MacroManagement = ({ macros, addMacro, editMacro, deleteMacro }) => {
+            const { useState, useEffect } = React;
+            return (
+                <div className="flex flex-col items-center w-full">
+                    <h1 className="text-4xl font-extrabold text-red-400 mb-8">MACRO MANAGEMENT</h1>
+                    <button
+                        onClick={addMacro}
+                        className="bg-red-600 hover:bg-red-700 px-6 py-3 rounded-xl shadow-lg transition-colors duration-200 text-lg font-semibold mb-8"
+                    >
+                        Add New Macro
+                    </button>
+
+                    {macros.length === 0 ? (
+                        <p className="text-zinc-400 text-lg">No macros defined yet. Click "Add New Macro" to create one.</p>
+                    ) : (
+                        <div className="w-full max-w-2xl bg-zinc-700 rounded-xl p-6 shadow-lg border-2 border-zinc-600">
+                            <h2 className="text-2xl font-bold text-red-300 mb-4">Defined Macros</h2>
+                            <ul className="space-y-4">
+                                {macros.map(macro => (
+                                    <li key={macro.id} className="bg-zinc-600 rounded-lg p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center shadow-md border border-zinc-500">
+                                        <div>
+                                            <p className="text-xl font-semibold text-white">{macro.name}</p>
+                                            <p className="text-zinc-300 text-sm break-all">Sequence: "{macro.sequence}"</p>
+                                        </div>
+                                        <div className="flex space-x-3 mt-3 sm:mt-0">
+                                            <button
+                                                onClick={() => editMacro(macro.id)}
+                                                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm transition-colors duration-200"
+                                            >
+                                                Edit
+                                            </button>
+                                            <button
+                                                onClick={() => deleteMacro(macro.id)}
+                                                className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-sm transition-colors duration-200"
+                                            >
+                                                Delete
+                                            </button>
+                                        </div>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // PeripheralControls component (formerly from src/components/PeripheralControls.js)
+        const PeripheralControls = ({ potentiometerConfig, setPotentiometerConfig }) => {
+            const { useState, useEffect } = React;
+            return (
+                <div className="flex flex-col items-center w-full">
+                    <h1 className="text-4xl font-extrabold text-red-400 mb-8">PERIPHERAL CONTROLS</h1>
+
+                    <div className="w-full max-w-xl bg-zinc-700 rounded-xl p-6 shadow-lg border-2 border-zinc-600">
+                        <h2 className="text-2xl font-bold text-red-300 mb-4">Potentiometer Configuration</h2>
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <label htmlFor="potentiometer-enable" className="text-lg text-zinc-200">Enable Potentiometer:</label>
+                                <input
+                                    type="checkbox"
+                                    id="potentiometer-enable"
+                                    checked={potentiometerConfig.enabled}
+                                    onChange={(e) => setPotentiometerConfig(prev => ({ ...prev, enabled: e.target.checked }))}
+                                    className="form-checkbox h-6 w-6 text-red-600 rounded focus:ring-red-500"
+                                />
+                            </div>
+
+                            {potentiometerConfig.enabled && (
+                                <>
+                                    <div className="flex items-center justify-between">
+                                        <label htmlFor="potentiometer-pin" className="text-lg text-zinc-200">Analog Pin:</label>
+                                        <input
+                                            type="number"
+                                            id="potentiometer-pin"
+                                            value={potentiometerConfig.pin}
+                                            onChange={(e) => setPotentiometerConfig(prev => ({ ...prev, pin: parseInt(e.target.value) || 0 }))}
+                                            className="bg-zinc-800 border border-zinc-600 rounded-md p-2 w-24 text-white"
+                                        />
+                                    </div>
+
+                                    <div className="flex items-center justify-between">
+                                        <label htmlFor="potentiometer-function" className="text-lg text-zinc-200">Function:</label>
+                                        <select
+                                            id="potentiometer-function"
+                                            value={potentiometerConfig.function}
+                                            onChange={(e) => setPotentiometerConfig(prev => ({ ...prev, function: e.target.value }))}
+                                            className="bg-zinc-800 border border-zinc-600 rounded-md p-2 text-white"
+                                        >
+                                            <option value="volume">Volume Control</option>
+                                            <option value="scroll">Scroll</option>
+                                            <option value="custom">Custom QMK Keycode</option>
+                                        </select>
+                                    </div>
+
+                                    {potentiometerConfig.function === 'custom' && (
+                                        <div className="flex items-center justify-between">
+                                            <label htmlFor="custom-action" className="text-lg text-zinc-200">Custom QMK Keycode:</label>
+                                            <input
+                                                type="text"
+                                                id="custom-action"
+                                                value={potentiometerConfig.customAction}
+                                                onChange={(e) => setPotentiometerConfig(prev => ({ ...prev, customAction: e.target.value }))}
+                                                placeholder="e.g., KC_MPLY"
+                                                className="bg-zinc-800 border border-zinc-600 rounded-md p-2 w-48 text-white"
+                                            />
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // SaveLoad component (formerly from src/components/SaveLoad.js)
+        const SaveLoad = ({ saveProfile, loadProfile, exportKeymap, uploadToDevice }) => {
+            const { useState, useEffect } = React;
+            return (
+                <div className="flex flex-col items-center w-full">
+                    <h1 className="text-4xl font-extrabold text-red-400 mb-8">SAVE & LOAD PROFILE</h1>
+                    <div className="flex flex-col space-y-4 w-full max-w-md">
+                        <button
+                            onClick={saveProfile}
+                            className="bg-red-600 hover:bg-red-700 px-6 py-3 rounded-xl shadow-lg transition-colors duration-200 text-lg font-semibold"
+                        >
+                            Save Profile to Browser
+                        </button>
+                        <button
+                            onClick={loadProfile}
+                            className="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-xl shadow-lg transition-colors duration-200 text-lg font-semibold"
+                        >
+                            Load Profile from Browser
+                        </button>
+                        <button
+                            onClick={exportKeymap}
+                            className="bg-green-600 hover:bg-green-700 px-6 py-3 rounded-xl shadow-lg transition-colors duration-200 text-lg font-semibold"
+                        >
+                            Export Configuration as JSON
+                        </button>
+                        <button
+                            onClick={uploadToDevice}
+                            className="bg-purple-600 hover:bg-purple-700 px-6 py-3 rounded-xl shadow-lg transition-colors duration-200 text-lg font-semibold"
+                        >
+                            Upload to Device (Web Serial)
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
+        // Settings component (formerly from src/components/Settings.js)
+        const Settings = ({ jsonInput, setJsonInput, loadJsonFromTextArea }) => {
+            const { useState, useEffect } = React;
+            return (
+                <div className="flex flex-col items-center w-full">
+                    <h1 className="text-4xl font-extrabold text-red-400 mb-8">SETTINGS</h1>
+                    <div className="w-full max-w-2xl bg-zinc-700 rounded-xl p-6 shadow-lg border-2 border-zinc-600">
+                        <h2 className="text-2xl font-bold text-red-300 mb-4">Import JSON Configuration</h2>
+                        <textarea
+                            className="w-full h-64 bg-zinc-800 border border-zinc-600 rounded-md p-4 text-white font-mono text-sm resize-y"
+                            placeholder="Paste your JSON configuration here..."
+                            value={jsonInput}
+                            onChange={(e) => setJsonInput(e.target.value)}
+                        ></textarea>
+                        <button
+                            onClick={loadJsonFromTextArea}
+                            className="mt-4 bg-teal-600 hover:bg-teal-700 px-6 py-3 rounded-xl shadow-lg transition-colors duration-200 text-lg font-semibold w-full"
+                        >
+                            Load JSON
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
+        // KeyTester component (formerly from src/components/KeyTester.js)
+        const KeyTester = ({ activeTab }) => {
+            const { useState, useEffect } = React;
+            const [pressedKeys, setPressedKeys] = useState([]);
+
+            useEffect(() => {
+                if (activeTab === 'keytester') {
+                    const handleKeyDown = (e) => {
+                        e.preventDefault();
+                        setPressedKeys(prev => {
+                            const newKey = { key: e.key, code: e.code, timestamp: Date.now() };
+                            if (!prev.some(k => k.code === e.code && k.type === 'down')) {
+                                return [...prev, { ...newKey, type: 'down' }];
+                            }
+                            return prev;
+                        });
+                    };
+
+                    const handleKeyUp = (e) => {
+                        e.preventDefault();
+                        setPressedKeys(prev => prev.filter(k => k.code !== e.code));
+                    };
+
+                    window.addEventListener('keydown', handleKeyDown);
+                    window.addEventListener('keyup', handleKeyUp);
+
+                    return () => {
+                        window.removeEventListener('keydown', handleKeyDown);
+                        window.removeEventListener('keyup', handleKeyUp);
+                    };
+                } else {
+                    setPressedKeys([]);
+                }
+            }, [activeTab]);
+
+            return (
+                <div className="flex flex-col items-center w-full">
+                    <h1 className="text-4xl font-extrabold text-red-400 mb-8">KEY TESTER</h1>
+                    <p className="text-zinc-300 mb-6 text-lg">Press any key on your keyboard to see its details.</p>
+                    <div className="w-full max-w-2xl bg-zinc-700 rounded-xl p-6 shadow-lg border-2 border-zinc-600 min-h-[200px] flex flex-wrap items-center justify-center gap-4">
+                        {pressedKeys.length === 0 ? (
+                            <p className="text-zinc-400 text-xl">No keys pressed...</p>
+                        ) : (
+                            pressedKeys.map((keyInfo, index) => (
+                                <div
+                                    key={keyInfo.code + '-' + keyInfo.timestamp}
+                                    className="bg-zinc-600 rounded-lg p-4 shadow-md border border-zinc-500 flex flex-col items-center justify-center min-w-[120px]"
+                                >
+                                    <span className="text-xl font-bold text-red-300">{keyInfo.key === ' ' ? 'Space' : keyInfo.key}</span>
+                                    <span className="text-sm text-zinc-400 mt-1">{keyInfo.code}</span>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+
+        // Main App component (formerly from src/App.js)
+        function App() {
+            const { useState, useEffect, useCallback } = React;
+
+            // Updated initialGrid to be multi-layered
+            const [keymap, setKeymap] = useState(initialMultiLayerGrid);
+            const [shortcutPool, setShortcutPool] = useState(Object.fromEntries(Object.entries(presets).map(([k, v]) => [k, [...v]])));
+            const [showModal, setShowModal] = useState(false);
+            const [modalContent, setModalContent] = useState({ title: "", message: "" });
+            const [draggedShortcut, setDraggedShortcut] = useState(null);
+            const [activeTab, setActiveTab] = useState('keymap');
+            const [jsonInput, setJsonInput] = useState('');
+            const [currentLayer, setCurrentLayer] = useState(0); // New state for active layer in UI
+            // New state for click-to-assign functionality
+            const [selectedKeymapCell, setSelectedKeymapCell] = useState(null); // {row, col, layer} or null
+            // New state for Web Serial API support
+            const [webSerialSupported, setWebSerialSupported] = useState(false);
+
+            const [macros, setMacros] = useState([
+                { id: 1, name: "Hello World", sequence: "Hello World!" },
+                { id: 2, name: "Signature", sequence: "John Doe\nSoftware Engineer" },
+            ]);
+            const [nextMacroId, setNextMacroId] = useState(3);
+
+            const [potentiometerConfig, setPotentiometerConfig] = useState({
+                enabled: false,
+                pin: 34,
+                function: 'volume',
+                customAction: ''
+            });
+
+            // Load profile on component mount and check Web Serial API support
+            useEffect(() => {
+                loadProfile();
+                setWebSerialSupported('serial' in navigator);
+            }, []);
+
+            // Handlers for drag and drop
+            const handleDrop = (e, row, col) => {
+                e.preventDefault();
+                const data = e.dataTransfer.getData("text/plain");
+                let droppedItem;
+
+                try {
+                    droppedItem = JSON.parse(data);
+                } catch (error) {
+                    console.error("Failed to parse dropped data:", error);
+                    setDraggedShortcut(null);
+                    return;
+                }
+
+                const newKeymap = JSON.parse(JSON.stringify(keymap));
+
+                if (droppedItem.isKeymapCell) {
+                    const sourceRow = droppedItem.sourceRow;
+                    const sourceCol = droppedItem.sourceCol;
+                    const sourceLayer = droppedItem.sourceLayer;
+
+                    if (sourceLayer === currentLayer) {
+                        const tempCell = newKeymap[currentLayer][row][col];
+                        newKeymap[currentLayer][row][col] = newKeymap[currentLayer][sourceRow][sourceCol];
+                        newKeymap[currentLayer][sourceRow][sourceCol] = tempCell;
+                    } else {
+                        newKeymap[currentLayer][row][col] = droppedItem.cell;
+                    }
+                } else {
+                    newKeymap[currentLayer][row][col] = { tap: droppedItem, hold: null };
+                }
+
+                setKeymap(newKeymap);
+                setDraggedShortcut(null);
+                setSelectedKeymapCell(null); // Clear any active cell selection after drag-drop
+            };
+
+
+            const handleKeymapDragStart = (e, cell, row, col) => {
+                const dragData = JSON.stringify({ isKeymapCell: true, cell: cell, sourceRow: row, sourceCol: col, sourceLayer: currentLayer });
+                e.dataTransfer.setData("text/plain", dragData);
+                setSelectedKeymapCell(null); // Clear any active cell selection on drag start
+            };
+
+            const handleShortcutDragStart = (e, shortcut) => {
+                e.dataTransfer.setData("text/plain", JSON.stringify(shortcut));
+                setDraggedShortcut(shortcut);
+                setSelectedKeymapCell(null); // Clear any active cell selection on drag start
+            };
+
+            const handleDragEnd = () => {
+                setDraggedShortcut(null);
+            };
+
+            const clearKeymapCell = (rIdx, cIdx) => {
+                const updatedKeymap = keymap.map((layer, lIdx) =>
+                    lIdx === currentLayer
+                        ? layer.map((r, rowIdx) =>
+                              r.map((cell, colIdx) =>
+                                  (rowIdx === rIdx && colIdx === cIdx) ? { tap: null, hold: null } : cell
+                              )
+                          )
+                        : layer
+                );
+                setKeymap(updatedKeymap);
+                setSelectedKeymapCell(null); // Clear selection if the cleared cell was selected
+            };
+
+            // New handler for clicking a keymap cell
+            const handleKeymapCellClick = (row, col, layer) => {
+                // If the clicked cell is already selected, deselect it
+                if (selectedKeymapCell && selectedKeymapCell.row === row && selectedKeymapCell.col === col && selectedKeymapCell.layer === layer) {
+                    setSelectedKeymapCell(null);
+                } else {
+                    // Otherwise, select this cell
+                    setSelectedKeymapCell({ row, col, layer });
+                }
+            };
+
+            // New handler for clicking a shortcut in the pool
+            const handleShortcutClick = (shortcut) => {
+                if (selectedKeymapCell) {
+                    const { row, col, layer } = selectedKeymapCell;
+                    const newKeymap = JSON.parse(JSON.stringify(keymap));
+                    newKeymap[layer][row][col] = { tap: shortcut, hold: null };
+                    setKeymap(newKeymap);
+                    setSelectedKeymapCell(null); // Clear selection after assignment
+                } else {
+                    // Optionally, you could show a modal or message if no cell is selected
+                    setModalContent({
+                        title: "No Keymap Cell Selected",
+                        message: "Please click a keymap cell first to select it, then click a shortcut to assign it."
+                    });
+                    setShowModal(true);
+                }
+            };
+
+
+            // Profile Management
+            const saveProfile = () => {
+                const profileData = {
+                    keymap: keymap, // Save the multi-layer keymap
+                    potentiometerConfig: potentiometerConfig,
+                    macros: macros
+                };
+                localStorage.setItem("trkey_profile", JSON.stringify(profileData));
+                setModalContent({
+                    title: "Profile Saved",
+                    message: "Profile saved to browser storage."
+                });
+                setShowModal(true);
+            };
+
+            const loadProfile = () => {
+                const saved = localStorage.getItem("trkey_profile");
+                if (saved) {
+                    const profileData = JSON.parse(saved);
+                    // Ensure loaded keymap matches expected multi-layer structure
+                    if (profileData.keymap && Array.isArray(profileData.keymap) && profileData.keymap.length === initialMultiLayerGrid.length) {
+                        setKeymap(profileData.keymap);
+                    } else {
+                        setKeymap(initialMultiLayerGrid); // Fallback to empty multi-layer grid
+                        console.warn("Loaded keymap structure mismatch, resetting to initial multi-layer grid.");
+                    }
+                    setPotentiometerConfig(profileData.potentiometerConfig || { enabled: false, pin: 34, function: 'volume', customAction: '' });
+                    setMacros(profileData.macros || []);
+                    setModalContent({
+                        title: "Profile Loaded",
+                        message: "Profile loaded successfully."
+                    });
+                } else {
+                    setModalContent({
+                        title: "No Profile Found",
+                        message: "No saved profile found."
+                    });
+                }
+                setShowModal(true);
+            };
+
+            // Export and Upload
+            const exportKeymap = () => {
+                // Transform the internal multi-layer keymap state to the ESP32-friendly JSON format
+                const layersForExport = {};
+                keymap.forEach((layer, lIdx) => {
+                    layersForExport[String(lIdx)] = layer.map(row => row.map(cell => ({
+                        tap: cell.tap ? cell.tap.combo : "",
+                        hold: cell.hold ? cell.hold.combo : ""
+                    })));
+                });
+
+                const fullMap = {
+                    layout: "3x3",
+                    layers: layersForExport, // Use the transformed layers object
+                    peripherals: {
+                        potentiometers: [
+                            potentiometerConfig.enabled ? {
+                                pin: potentiometerConfig.pin,
+                                function: potentiometerConfig.function,
+                                customAction: potentiometerConfig.customAction
+                            } : null
+                        ].filter(Boolean)
+                    },
+                    macros: macros.map(m => ({ name: m.name, sequence: m.sequence }))
+                };
+                const blob = new Blob([JSON.stringify(fullMap, null, 2)], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "trkey_config.json";
+                a.click();
+                setModalContent({
+                    title: "Export Successful",
+                    message: "Configuration exported as trkey_config.json."
+                });
+                setShowModal(true);
+            };
+
+            const uploadToDevice = async () => {
+                try {
+                    if (!webSerialSupported) {
+                        setModalContent({
+                            title: "Web Serial API Not Supported",
+                            message: "Your browser does not support the Web Serial API. Please use a Chromium-based browser (e.g., Chrome, Edge) to upload to device."
+                        });
+                        setShowModal(true);
+                        return;
+                    }
+
+                    const port = await navigator.serial.requestPort();
+                    await port.open({ baudRate: 115200 });
+                    const writer = port.writable.getWriter();
+
+                    // Transform the internal multi-layer keymap state to the ESP32-friendly JSON format
+                    const layersForUpload = {};
+                    keymap.forEach((layer, lIdx) => {
+                        layersForUpload[String(lIdx)] = layer.map(row => row.map(cell => ({
+                            tap: cell.tap ? cell.tap.combo : "",
+                            hold: cell.hold ? cell.hold.combo : ""
+                        })));
+                    });
+
+                    const fullMap = {
+                        layout: "3x3",
+                        layers: layersForUpload, // Use the transformed layers object
+                        peripherals: {
+                            potentiometers: [
+                                potentiometerConfig.enabled ? {
+                                    pin: potentiometerConfig.pin,
+                                    function: potentiometerConfig.function,
+                                    customAction: potentiometerConfig.customAction
+                                } : null
+                            ].filter(Boolean)
+                        },
+                        macros: macros.map(m => ({ name: m.name, sequence: m.sequence }))
+                    };
+                    const json = JSON.stringify(fullMap);
+                    const encoder = new TextEncoder();
+                    await writer.write(encoder.encode(json));
+                    writer.releaseLock();
+                    await port.close();
+                    setModalContent({
+                        title: "Upload Successful",
+                        message: "Configuration uploaded successfully!"
+                    });
+                } catch (err) {
+                    setModalContent({
+                        title: "Upload Failed",
+                        message: "Failed to upload: " + err.message
+                    });
+                } finally {
+                    setShowModal(true);
+                }
+            };
+
+            // JSON Import
+            const loadJsonFromTextArea = () => {
+                try {
+                    const parsedJson = JSON.parse(jsonInput);
+                    if (parsedJson.layers && typeof parsedJson.layers === 'object') {
+                        const newKeymap = Array(initialMultiLayerGrid.length).fill().map(() =>
+                            Array(3).fill().map(() => Array(3).fill({ tap: null, hold: null }))
+                        );
+
+                        // Iterate through parsed layers and populate newKeymap
+                        for (const layerKey in parsedJson.layers) {
+                            const lIdx = parseInt(layerKey);
+                            if (!isNaN(lIdx) && lIdx >= 0 && lIdx < initialMultiLayerGrid.length) {
+                                const layerData = parsedJson.layers[layerKey];
+                                if (Array.isArray(layerData) && layerData.length === 3) { // Expecting 3 rows
+                                    layerData.forEach((row, rIdx) => {
+                                        if (Array.isArray(row) && row.length === 3) { // Expecting 3 columns
+                                            row.forEach((cellData, cIdx) => {
+                                                if (cellData && cellData.tap) {
+                                                    const combo = cellData.tap;
+                                                    // Find the description based on the combo from the updated presets
+                                                    let description = combo; // Default to combo if not found
+                                                    for (const category in presets) {
+                                                        const found = presets[category].find(p => p.combo === combo);
+                                                        if (found) {
+                                                            description = found.description;
+                                                            break;
+                                                        }
+                                                    }
+
+                                                    newKeymap[lIdx][rIdx][cIdx] = {
+                                                        tap: { combo: combo, description: description },
+                                                        hold: cellData.hold ? { combo: cellData.hold, description: cellData.hold } : null
+                                                    };
+                                                }
+                                            });
+                                        }
+                                    });
+                                }
+                            }
+                        }
+                        setKeymap(newKeymap);
+
+                        if (parsedJson.peripherals && parsedJson.peripherals.potentiometers && parsedJson.peripherals.potentiometers.length > 0) {
+                            const loadedPot = parsedJson.peripherals.potentiometers[0];
+                            setPotentiometerConfig({
+                                enabled: true,
+                                pin: loadedPot.pin || 34,
+                                function: loadedPot.function || 'volume',
+                                customAction: loadedPot.customAction || ''
+                            });
+                        } else {
+                            setPotentiometerConfig({ enabled: false, pin: 34, function: 'volume', customAction: '' });
+                        }
+
+                        if (parsedJson.macros && Array.isArray(parsedJson.macros)) {
+                            setMacros(parsedJson.macros.map((m, idx) => ({ id: idx + 1, name: m.name, sequence: m.sequence })));
+                            setNextMacroId(parsedJson.macros.length + 1);
+                        } else {
+                            setMacros([]);
+                            setNextMacroId(1);
+                        }
+
+                        setModalContent({
+                            title: "JSON Loaded",
+                            message: "Configuration loaded from text area successfully."
+                        });
+                    } else {
+                        setModalContent({
+                            title: "Invalid JSON",
+                            message: "The pasted JSON does not contain a valid 'layers' object or its structure is incorrect."
+                        });
+                    }
+                } catch (error) {
+                    setModalContent({
+                        title: "JSON Parsing Error",
+                        message: "Failed to parse JSON: " + error.message
+                    });
+                } finally {
+                    setShowModal(true);
+                }
+            };
+
+            // Macro functions
+            const addMacro = () => {
+                const name = prompt("Enter macro name:");
+                if (!name) return;
+                const sequence = prompt("Enter macro sequence (e.g., 'Hello World!'):");
+                if (sequence) {
+                    setMacros(prev => [...prev, { id: nextMacroId, name, sequence }]);
+                    setNextMacroId(prev => prev + 1);
+                }
+            };
+
+            const editMacro = (id) => {
+                const macroToEdit = macros.find(m => m.id === id);
+                if (!macroToEdit) return;
+
+                const newName = prompt(`Edit name for "${macroToEdit.name}":`, macroToEdit.name);
+                if (newName === null) return;
+
+                const newSequence = prompt(`Edit sequence for "${macroToEdit.name}":`, macroToEdit.sequence);
+                if (newSequence === null) return;
+
+                setMacros(prev => prev.map(m =>
+                    m.id === id ? { ...m, name: newName, sequence: newSequence } : m
+                ));
+            };
+
+            const deleteMacro = (id) => {
+                setModalContent({
+                    title: "Confirm Delete",
+                    message: "Are you sure you want to delete this macro?",
+                    onConfirm: () => {
+                        setMacros(prev => prev.filter(m => m.id !== id));
+                        setShowModal(false);
+                    },
+                    onCancel: () => setShowModal(false)
+                });
+                setShowModal(true);
+            };
+
+            return (
+                <div className="min-h-screen bg-zinc-800 text-white flex font-inter">
+                    {/* Sidebar */}
+                    <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+
+                    {/* Main Content Area */}
+                    <div className="flex-1 flex flex-col p-8 overflow-auto">
+                         {/* Web Serial Status Indicator */}
+                        <div className="flex justify-end mb-4">
+                            <span className={`text-sm px-3 py-1 rounded-full ${webSerialSupported ? 'bg-green-600' : 'bg-red-600'} text-white`}>
+                                Web Serial: {webSerialSupported ? 'Supported' : 'Not Supported'}
+                            </span>
+                        </div>
+
+                        {activeTab === 'keymap' && (
+                            <>
+                                <h1 className="text-4xl font-extrabold text-red-400 mb-4">KEYMAP CONFIGURATION</h1>
+                                {/* Visual Layer Indicator */}
+                                <h2 className="text-2xl font-bold text-zinc-300 mb-8">Currently Viewing: Layer {currentLayer}</h2>
+                                <KeymapGrid
+                                    keymap={keymap}
+                                    handleDrop={handleDrop}
+                                    handleKeymapDragStart={handleKeymapDragStart}
+                                    handleDragEnd={handleDragEnd}
+                                    clearKeymapCell={clearKeymapCell}
+                                    currentLayer={currentLayer} // Pass currentLayer
+                                    setCurrentLayer={setCurrentLayer} // Pass setter for layer buttons
+                                    selectedKeymapCell={selectedKeymapCell} /* New prop */
+                                    handleKeymapCellClick={handleKeymapCellClick} /* New prop */
+                                />
+                                <h2 className="text-3xl font-bold text-red-400 mb-6">SHORTCUTS</h2>
+                                <ShortcutPool
+                                    shortcutPool={shortcutPool}
+                                    draggedShortcut={draggedShortcut}
+                                    handleShortcutDragStart={handleShortcutDragStart}
+                                    handleDragEnd={handleDragEnd}
+                                    selectedKeymapCell={selectedKeymapCell} /* New prop */
+                                    handleShortcutClick={handleShortcutClick} /* New prop */
+                                />
+                            </>
+                        )}
+
+                        {activeTab === 'macros' && (
+                            <MacroManagement
+                                macros={macros}
+                                addMacro={addMacro}
+                                editMacro={editMacro}
+                                deleteMacro={deleteMacro}
+                            />
+                        )}
+
+                        {activeTab === 'controls' && (
+                            <PeripheralControls
+                                potentiometerConfig={potentiometerConfig}
+                                setPotentiometerConfig={setPotentiometerConfig}
+                            />
+                        )}
+
+                        {activeTab === 'save-load' && (
+                            <SaveLoad
+                                saveProfile={saveProfile}
+                                loadProfile={loadProfile}
+                                exportKeymap={exportKeymap}
+                                uploadToDevice={uploadToDevice}
+                            />
+                        )}
+
+                        {activeTab === 'settings' && (
+                            <Settings
+                                jsonInput={jsonInput}
+                                setJsonInput={setJsonInput}
+                                loadJsonFromTextArea={loadJsonFromTextArea}
+                            />
+                        )}
+
+                        {activeTab === 'keytester' && (
+                            <KeyTester activeTab={activeTab} />
+                        )}
+                    </div>
+
+                    {/* Modals */}
+                    <Modal
+                        show={showModal && !modalContent.onConfirm}
+                        title={modalContent.title}
+                        message={modalContent.message}
+                        onClose={() => setShowModal(false)}
+                    />
+                    <ConfirmationModal
+                        show={showModal && modalContent.onConfirm}
+                        title={modalContent.title}
+                        message={modalContent.message}
+                        onConfirm={modalContent.onConfirm}
+                        onCancel={modalContent.onCancel}
+                    />
+                </div>
+            );
+        }
+
+        // Render the App component into the 'root' div
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>
