@@ -594,7 +594,7 @@
         };
 
         // KeymapGrid component (formerly from src/components/KeymapGrid.js)
-        const KeymapGrid = ({ keymap, handleDrop, handleKeymapDragStart, handleDragEnd, clearKeymapCell, currentLayer, setCurrentLayer, selectedKeymapCell, handleKeymapCellClick }) => {
+        const KeymapGrid = ({ keymap, handleDrop, handleKeymapDragStart, handleDragEnd, clearKeymapCell, currentLayer, setCurrentLayer, selectedKeymapCell, handleKeymapCellClick, clearCurrentLayer }) => {
             const { useState, useEffect } = React;
             return (
                 <div className="flex flex-col items-center">
@@ -609,6 +609,13 @@
                                 Layer {index}
                             </button>
                         ))}
+                        <button
+                            onClick={clearCurrentLayer}
+                            className="px-4 py-2 rounded-lg font-semibold bg-red-800 text-white hover:bg-red-700 transition-colors duration-200 shadow-md"
+                            title="Clear all keys on the current layer"
+                        >
+                            Clear Current Layer
+                        </button>
                     </div>
                     <div className="grid grid-cols-3 gap-4 mb-12 w-full max-w-md mx-auto">
                         {keymap[currentLayer].map((row, rIdx) => ( // Access keymap for currentLayer
@@ -616,8 +623,8 @@
                                 <div
                                     key={`${rIdx}-${cIdx}`}
                                     className={`relative bg-zinc-700 rounded-xl p-4 h-32 flex flex-col items-center justify-center border-2 border-zinc-600 shadow-md
-                                                hover:border-red-500 transition-all duration-200 cursor-grab
-                                                ${selectedKeymapCell && selectedKeymapCell.row === rIdx && selectedKeymapCell.col === cIdx && selectedKeymapCell.layer === currentLayer ? 'border-blue-500 ring-2 ring-blue-500' : ''}`}
+                                                hover:border-red-500 transition-all duration-200 cursor-pointer /* Changed cursor to pointer */
+                                                ${selectedKeymapCell && selectedKeymapCell.row === rIdx && selectedKeymapCell.col === cIdx && selectedKeymapCell.layer === currentLayer ? 'border-blue-500 ring-2 ring-blue-500 bg-blue-900 bg-opacity-30' : ''}`} /* Added bg-blue-900 and opacity */
                                     onDragOver={(e) => e.preventDefault()}
                                     onDrop={(e) => handleDrop(e, rIdx, cIdx)}
                                     draggable
@@ -724,6 +731,14 @@
                                     >
                                         <span className="font-medium text-lg">{shortcut.combo}</span>
                                         <span className="text-sm text-zinc-300">{shortcut.description}</span>
+                                        {selectedKeymapCell && (
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); handleShortcutClick(shortcut); }}
+                                                className="mt-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm transition-colors duration-200"
+                                            >
+                                                Assign
+                                            </button>
+                                        )}
                                     </div>
                                 ))
                             ) : (
@@ -856,7 +871,7 @@
         const SaveLoad = ({ saveProfile, loadProfile, exportKeymap, uploadToDevice }) => {
             const { useState, useEffect } = React;
             return (
-                <div className="flex flex-col items-center w-full">
+                <div className="flex flex-col items-center w-full p-8"> {/* Added padding here */}
                     <h1 className="text-4xl font-extrabold text-red-400 mb-8">SAVE & LOAD PROFILE</h1>
                     <div className="flex flex-col space-y-4 w-full max-w-md">
                         <button
@@ -875,8 +890,11 @@
                             onClick={exportKeymap}
                             className="bg-green-600 hover:bg-green-700 px-6 py-3 rounded-xl shadow-lg transition-colors duration-200 text-lg font-semibold"
                         >
-                            Export Configuration as JSON
+                            Export Configuration as layers.json
                         </button>
+                        <div className="bg-zinc-700 rounded-xl p-4 text-zinc-300 text-center text-sm border border-zinc-600">
+                            To upload to Pico: Save the exported `layers.json` file, then drag and drop it onto your `CIRCUITPY` drive.
+                        </div>
                         <button
                             onClick={uploadToDevice}
                             className="bg-purple-600 hover:bg-purple-700 px-6 py-3 rounded-xl shadow-lg transition-colors duration-200 text-lg font-semibold"
@@ -892,13 +910,13 @@
         const Settings = ({ jsonInput, setJsonInput, loadJsonFromTextArea }) => {
             const { useState, useEffect } = React;
             return (
-                <div className="flex flex-col items-center w-full">
+                <div className="flex flex-col items-center w-full p-8"> {/* Added padding here */}
                     <h1 className="text-4xl font-extrabold text-red-400 mb-8">SETTINGS</h1>
                     <div className="w-full max-w-2xl bg-zinc-700 rounded-xl p-6 shadow-lg border-2 border-zinc-600">
                         <h2 className="text-2xl font-bold text-red-300 mb-4">Import JSON Configuration</h2>
                         <textarea
                             className="w-full h-64 bg-zinc-800 border border-zinc-600 rounded-md p-4 text-white font-mono text-sm resize-y"
-                            placeholder="Paste your JSON configuration here..."
+                            placeholder="Paste your layers.json configuration here..."
                             value={jsonInput}
                             onChange={(e) => setJsonInput(e.target.value)}
                         ></textarea>
@@ -949,7 +967,7 @@
             }, [activeTab]);
 
             return (
-                <div className="flex flex-col items-center w-full">
+                <div className="flex flex-col items-center w-full p-8"> {/* Added padding here */}
                     <h1 className="text-4xl font-extrabold text-red-400 mb-8">KEY TESTER</h1>
                     <p className="text-zinc-300 mb-6 text-lg">Press any key on your keyboard to see its details.</p>
                     <div className="w-full max-w-2xl bg-zinc-700 rounded-xl p-6 shadow-lg border-2 border-zinc-600 min-h-[200px] flex flex-wrap items-center justify-center gap-4">
@@ -1106,6 +1124,26 @@
                 }
             };
 
+            // New handler to clear all cells on the current layer
+            const clearCurrentLayer = () => {
+                setModalContent({
+                    title: "Confirm Clear Layer",
+                    message: `Are you sure you want to clear all keys on Layer ${currentLayer}? This action cannot be undone.`,
+                    onConfirm: () => {
+                        const updatedKeymap = keymap.map((layer, lIdx) =>
+                            lIdx === currentLayer
+                                ? Array(3).fill().map(() => Array(3).fill({ tap: null, hold: null }))
+                                : layer
+                        );
+                        setKeymap(updatedKeymap);
+                        setSelectedKeymapCell(null); // Clear any active cell selection
+                        setShowModal(false);
+                    },
+                    onCancel: () => setShowModal(false)
+                });
+                setShowModal(true);
+            };
+
 
             // Profile Management
             const saveProfile = () => {
@@ -1150,38 +1188,40 @@
 
             // Export and Upload
             const exportKeymap = () => {
-                // Transform the internal multi-layer keymap state to the ESP32-friendly JSON format
-                const layersForExport = {};
-                keymap.forEach((layer, lIdx) => {
-                    layersForExport[String(lIdx)] = layer.map(row => row.map(cell => ({
-                        tap: cell.tap ? cell.tap.combo : "",
-                        hold: cell.hold ? cell.hold.combo : ""
-                    })));
+                // Transform the internal multi-layer keymap state to the Pico-friendly layers.json format
+                const layersForExport = []; // Array of layer objects
+
+                keymap.forEach((layerData, lIdx) => {
+                    const layerName = `Layer ${lIdx}`; // Default name
+                    // Flatten the 3x3 grid into a 1D array of 9 keys
+                    const keys = layerData.flat().map(cell => cell.tap ? cell.tap.combo : "");
+                    const labels = layerData.flat().map(cell => cell.tap ? cell.tap.description : "");
+
+                    layersForExport.push({
+                        name: layerName,
+                        labels: labels,
+                        keys: keys
+                    });
                 });
 
-                const fullMap = {
-                    layout: "3x3",
-                    layers: layersForExport, // Use the transformed layers object
-                    peripherals: {
-                        potentiometers: [
-                            potentiometerConfig.enabled ? {
-                                pin: potentiometerConfig.pin,
-                                function: potentiometerConfig.function,
-                                customAction: potentiometerConfig.customAction
-                            } : null
-                        ].filter(Boolean)
-                    },
-                    macros: macros.map(m => ({ name: m.name, sequence: m.sequence }))
-                };
-                const blob = new Blob([JSON.stringify(fullMap, null, 2)], { type: "application/json" });
+                const fullExportData = layersForExport; // The root is now the array of layers
+
+                // Macros are separate in Pico's layers.json, typically added to the first layer
+                if (macros.length > 0) {
+                    if (fullExportData.length > 0) {
+                         fullExportData[0].macros = macros.map(m => ({ name: m.name, sequence: m.sequence }));
+                    }
+                }
+
+                const blob = new Blob([JSON.stringify(fullExportData, null, 2)], { type: "application/json" });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement("a");
                 a.href = url;
-                a.download = "trkey_config.json";
+                a.download = "layers.json"; // Changed filename to layers.json
                 a.click();
                 setModalContent({
                     title: "Export Successful",
-                    message: "Configuration exported as trkey_config.json."
+                    message: "Configuration exported as layers.json. Drag this file onto your CIRCUITPY drive."
                 });
                 setShowModal(true);
             };
@@ -1201,30 +1241,28 @@
                     await port.open({ baudRate: 115200 });
                     const writer = port.writable.getWriter();
 
-                    // Transform the internal multi-layer keymap state to the ESP32-friendly JSON format
-                    const layersForUpload = {};
-                    keymap.forEach((layer, lIdx) => {
-                        layersForUpload[String(lIdx)] = layer.map(row => row.map(cell => ({
-                            tap: cell.tap ? cell.tap.combo : "",
-                            hold: cell.hold ? cell.hold.combo : ""
-                        })));
+                    // Transform the internal multi-layer keymap state to the Pico-friendly layers.json format
+                    const layersForUpload = [];
+                    keymap.forEach((layerData, lIdx) => {
+                        const layerName = `Layer ${lIdx}`;
+                        const keys = layerData.flat().map(cell => cell.tap ? cell.tap.combo : "");
+                        const labels = layerData.flat().map(cell => cell.tap ? cell.tap.description : "");
+
+                        layersForUpload.push({
+                            name: layerName,
+                            labels: labels,
+                            keys: keys
+                        });
                     });
 
-                    const fullMap = {
-                        layout: "3x3",
-                        layers: layersForUpload, // Use the transformed layers object
-                        peripherals: {
-                            potentiometers: [
-                                potentiometerConfig.enabled ? {
-                                    pin: potentiometerConfig.pin,
-                                    function: potentiometerConfig.function,
-                                    customAction: potentiometerConfig.customAction
-                                } : null
-                            ].filter(Boolean)
-                        },
-                        macros: macros.map(m => ({ name: m.name, sequence: m.sequence }))
-                    };
-                    const json = JSON.stringify(fullMap);
+                    const fullUploadData = layersForUpload;
+
+                    // Add macros to the first layer for upload
+                    if (macros.length > 0 && fullUploadData.length > 0) {
+                        fullUploadData[0].macros = macros.map(m => ({ name: m.name, sequence: m.sequence }));
+                    }
+
+                    const json = JSON.stringify(fullUploadData);
                     const encoder = new TextEncoder();
                     await writer.write(encoder.encode(json));
                     writer.releaseLock();
@@ -1247,73 +1285,52 @@
             const loadJsonFromTextArea = () => {
                 try {
                     const parsedJson = JSON.parse(jsonInput);
-                    if (parsedJson.layers && typeof parsedJson.layers === 'object') {
-                        const newKeymap = Array(initialMultiLayerGrid.length).fill().map(() =>
+
+                    // Expecting an array of layer objects for layers.json
+                    if (Array.isArray(parsedJson)) {
+                        const newKeymap = Array(NUM_LAYERS_PICO).fill().map(() =>
                             Array(3).fill().map(() => Array(3).fill({ tap: null, hold: null }))
                         );
+                        let loadedMacros = [];
 
-                        // Iterate through parsed layers and populate newKeymap
-                        for (const layerKey in parsedJson.layers) {
-                            const lIdx = parseInt(layerKey);
-                            if (!isNaN(lIdx) && lIdx >= 0 && lIdx < initialMultiLayerGrid.length) {
-                                const layerData = parsedJson.layers[layerKey];
-                                if (Array.isArray(layerData) && layerData.length === 3) { // Expecting 3 rows
-                                    layerData.forEach((row, rIdx) => {
-                                        if (Array.isArray(row) && row.length === 3) { // Expecting 3 columns
-                                            row.forEach((cellData, cIdx) => {
-                                                if (cellData && cellData.tap) {
-                                                    const combo = cellData.tap;
-                                                    // Find the description based on the combo from the updated presets
-                                                    let description = combo; // Default to combo if not found
-                                                    for (const category in presets) {
-                                                        const found = presets[category].find(p => p.combo === combo);
-                                                        if (found) {
-                                                            description = found.description;
-                                                            break;
-                                                        }
-                                                    }
+                        parsedJson.forEach((layerData, lIdx) => {
+                            if (lIdx < NUM_LAYERS_PICO) { // Only load up to NUM_LAYERS_PICO
+                                if (layerData.keys && Array.isArray(layerData.keys) && layerData.keys.length === 9) {
+                                    layerData.keys.forEach((combo, keyIndex) => {
+                                        const rIdx = Math.floor(keyIndex / 3);
+                                        const cIdx = keyIndex % 3;
+                                        const description = layerData.labels && layerData.labels[keyIndex] ? layerData.labels[keyIndex] : combo;
 
-                                                    newKeymap[lIdx][rIdx][cIdx] = {
-                                                        tap: { combo: combo, description: description },
-                                                        hold: cellData.hold ? { combo: cellData.hold, description: cellData.hold } : null
-                                                    };
-                                                }
-                                            });
-                                        }
+                                        newKeymap[lIdx][rIdx][cIdx] = {
+                                            tap: combo ? { combo: combo, description: description } : null,
+                                            hold: null // Pico doc doesn't mention hold, so keep null
+                                        };
                                     });
                                 }
+                                // Load macros if present in this layer (Pico doc suggests macros per layer, typically first)
+                                if (layerData.macros && Array.isArray(layerData.macros)) {
+                                    // Ensure unique IDs for loaded macros
+                                    const newMacros = layerData.macros.map((m, idx) => ({ id: nextMacroId + loadedMacros.length + idx, name: m.name, sequence: m.sequence }));
+                                    loadedMacros = [...loadedMacros, ...newMacros];
+                                }
                             }
-                        }
+                        });
                         setKeymap(newKeymap);
+                        setMacros(loadedMacros);
+                        setNextMacroId(loadedMacros.length + 1); // Update nextMacroId based on loaded macros
 
-                        if (parsedJson.peripherals && parsedJson.peripherals.potentiometers && parsedJson.peripherals.potentiometers.length > 0) {
-                            const loadedPot = parsedJson.peripherals.potentiometers[0];
-                            setPotentiometerConfig({
-                                enabled: true,
-                                pin: loadedPot.pin || 34,
-                                function: loadedPot.function || 'volume',
-                                customAction: loadedPot.customAction || ''
-                            });
-                        } else {
-                            setPotentiometerConfig({ enabled: false, pin: 34, function: 'volume', customAction: '' });
-                        }
+                        // Potentiometer config is not part of Pico's layers.json, so reset or keep default
+                        setPotentiometerConfig({ enabled: false, pin: 34, function: 'volume', customAction: '' });
 
-                        if (parsedJson.macros && Array.isArray(parsedJson.macros)) {
-                            setMacros(parsedJson.macros.map((m, idx) => ({ id: idx + 1, name: m.name, sequence: m.sequence })));
-                            setNextMacroId(parsedJson.macros.length + 1);
-                        } else {
-                            setMacros([]);
-                            setNextMacroId(1);
-                        }
 
                         setModalContent({
                             title: "JSON Loaded",
-                            message: "Configuration loaded from text area successfully."
+                            message: "Configuration loaded from text area successfully (layers.json format)."
                         });
                     } else {
                         setModalContent({
                             title: "Invalid JSON",
-                            message: "The pasted JSON does not contain a valid 'layers' object or its structure is incorrect."
+                            message: "The pasted JSON does not contain a valid layers.json array structure."
                         });
                     }
                 } catch (error) {
@@ -1371,7 +1388,7 @@
                     <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
                     {/* Main Content Area */}
-                    <div className="flex-1 flex flex-col p-8 overflow-auto">
+                    <div className="flex-1 flex flex-col p-4 overflow-auto"> {/* Adjusted padding for overall content */}
                          {/* Web Serial Status Indicator */}
                         <div className="flex justify-end mb-4">
                             <span className={`text-sm px-3 py-1 rounded-full ${webSerialSupported ? 'bg-green-600' : 'bg-red-600'} text-white`}>
@@ -1380,7 +1397,7 @@
                         </div>
 
                         {activeTab === 'keymap' && (
-                            <>
+                            <div className="p-4 bg-zinc-800 rounded-xl shadow-lg border border-zinc-700"> {/* Added container for keymap tab content */}
                                 <h1 className="text-4xl font-extrabold text-red-400 mb-4">KEYMAP CONFIGURATION</h1>
                                 {/* Visual Layer Indicator */}
                                 <h2 className="text-2xl font-bold text-zinc-300 mb-8">Currently Viewing: Layer {currentLayer}</h2>
@@ -1394,6 +1411,7 @@
                                     setCurrentLayer={setCurrentLayer} // Pass setter for layer buttons
                                     selectedKeymapCell={selectedKeymapCell} /* New prop */
                                     handleKeymapCellClick={handleKeymapCellClick} /* New prop */
+                                    clearCurrentLayer={clearCurrentLayer} /* New prop */
                                 />
                                 <h2 className="text-3xl font-bold text-red-400 mb-6">SHORTCUTS</h2>
                                 <ShortcutPool
@@ -1404,44 +1422,54 @@
                                     selectedKeymapCell={selectedKeymapCell} /* New prop */
                                     handleShortcutClick={handleShortcutClick} /* New prop */
                                 />
-                            </>
+                            </div>
                         )}
 
                         {activeTab === 'macros' && (
-                            <MacroManagement
-                                macros={macros}
-                                addMacro={addMacro}
-                                editMacro={editMacro}
-                                deleteMacro={deleteMacro}
-                            />
+                            <div className="p-4 bg-zinc-800 rounded-xl shadow-lg border border-zinc-700"> {/* Added container for macros tab content */}
+                                <MacroManagement
+                                    macros={macros}
+                                    addMacro={addMacro}
+                                    editMacro={editMacro}
+                                    deleteMacro={deleteMacro}
+                                />
+                            </div>
                         )}
 
                         {activeTab === 'controls' && (
-                            <PeripheralControls
-                                potentiometerConfig={potentiometerConfig}
-                                setPotentiometerConfig={setPotentiometerConfig}
-                            />
+                            <div className="p-4 bg-zinc-800 rounded-xl shadow-lg border border-zinc-700"> {/* Added container for controls tab content */}
+                                <PeripheralControls
+                                    potentiometerConfig={potentiometerConfig}
+                                    setPotentiometerConfig={setPotentiometerConfig}
+                                />
+                            </div>
                         )}
 
                         {activeTab === 'save-load' && (
-                            <SaveLoad
-                                saveProfile={saveProfile}
-                                loadProfile={loadProfile}
-                                exportKeymap={exportKeymap}
-                                uploadToDevice={uploadToDevice}
-                            />
+                            <div className="p-4 bg-zinc-800 rounded-xl shadow-lg border border-zinc-700"> {/* Added container for save-load tab content */}
+                                <SaveLoad
+                                    saveProfile={saveProfile}
+                                    loadProfile={loadProfile}
+                                    exportKeymap={exportKeymap}
+                                    uploadToDevice={uploadToDevice}
+                                />
+                            </div>
                         )}
 
                         {activeTab === 'settings' && (
-                            <Settings
-                                jsonInput={jsonInput}
-                                setJsonInput={setJsonInput}
-                                loadJsonFromTextArea={loadJsonFromTextArea}
-                            />
+                            <div className="p-4 bg-zinc-800 rounded-xl shadow-lg border border-zinc-700"> {/* Added container for settings tab content */}
+                                <Settings
+                                    jsonInput={jsonInput}
+                                    setJsonInput={setJsonInput}
+                                    loadJsonFromTextArea={loadJsonFromTextArea}
+                                />
+                            </div>
                         )}
 
                         {activeTab === 'keytester' && (
-                            <KeyTester activeTab={activeTab} />
+                            <div className="p-4 bg-zinc-800 rounded-xl shadow-lg border border-zinc-700"> {/* Added container for keytester tab content */}
+                                <KeyTester activeTab={activeTab} />
+                            </div>
                         )}
                     </div>
 
