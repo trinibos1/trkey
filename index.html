@@ -350,7 +350,13 @@
         };
 
         const NUM_LAYERS_PICO = 2; // Matches the NUM_LAYERS in the Pico code
-        const initialMultiLayerGrid = Array(NUM_LAYERS_PICO).fill().map(() => Array(3).fill().map(() => Array(3).fill({ tap: null, hold: null })));
+        // Updated initialMultiLayerGrid to include a 'macros' key for consistency with Pico's layers.json
+        const initialMultiLayerGrid = Array(NUM_LAYERS_PICO).fill().map((_, layerIdx) => ({
+            name: `Layer ${layerIdx}`,
+            labels: Array(9).fill(''), // 3x3 grid, flattened to 9 labels
+            keys: Array(9).fill(null), // 3x3 grid, flattened to 9 keys (null for empty)
+            macros: [] // Initialize with empty macros list
+        }));
 
 
         // Modal component (formerly from src/components/Modal.js)
@@ -454,6 +460,39 @@
         // KeymapGrid component (formerly from src/components/KeymapGrid.js)
         const KeymapGrid = ({ keymap, handleDrop, handleKeymapDragStart, handleDragEnd, clearKeymapCell, currentLayer, setCurrentLayer, selectedKeymapCell, handleKeymapCellClick, clearCurrentLayer }) => {
             const { useState, useEffect } = React;
+            // The keymap prop is now an array of layer objects, each with 'keys' and 'labels'
+            // We need to transform the 1D 'keys' and 'labels' arrays into a 3x3 grid for display
+            const currentLayerData = keymap[currentLayer] || { keys: Array(9).fill(null), labels: Array(9).fill('') };
+
+            // Helper to get the key/label for a specific grid cell
+            const getCellContent = (rIdx, cIdx) => {
+                const flatIndex = rIdx * 3 + cIdx;
+                const keyCombo = currentLayerData.keys[flatIndex];
+                const keyLabel = currentLayerData.labels[flatIndex];
+                
+                if (keyCombo) {
+                    // Find the description from presets if available
+                    let description = keyLabel; // Default to label
+                    for (const category in presets) {
+                        const found = presets[category].find(p => p.combo === keyCombo);
+                        if (found) {
+                            description = found.description;
+                            break;
+                        }
+                    }
+                    // For macros, use the macro name as description
+                    if (keyCombo.startsWith("MACRO_")) {
+                        const macroName = keyCombo.replace("_", " "); // e.g., "MACRO 1"
+                        // Here, we'd ideally look up the actual macro name from the macros state
+                        // For now, we'll use the generated name
+                        description = macroName;
+                    }
+
+                    return { combo: keyCombo, description: description };
+                }
+                return null;
+            };
+
             return (
                 <div className="flex flex-col items-center">
                     <div className="flex space-x-2 mb-4">
@@ -476,41 +515,45 @@
                         </button>
                     </div>
                     <div className="grid grid-cols-3 gap-4 mb-12 w-full max-w-md mx-auto">
-                        {keymap[currentLayer].map((row, rIdx) => ( // Access keymap for currentLayer
-                            row.map((cell, cIdx) => (
-                                <div
-                                    key={`${rIdx}-${cIdx}`}
-                                    className={`relative bg-zinc-700 rounded-xl p-4 h-32 flex flex-col items-center justify-center border-2 border-zinc-600 shadow-md
-                                                hover:border-red-500 transition-all duration-200 cursor-pointer /* Changed cursor to pointer */
-                                                ${selectedKeymapCell && selectedKeymapCell.row === rIdx && selectedKeymapCell.col === cIdx && selectedKeymapCell.layer === currentLayer ? 'border-blue-500 ring-2 ring-blue-500 bg-blue-900 bg-opacity-30' : ''}`} /* Added bg-blue-900 and opacity */
-                                    onDragOver={(e) => e.preventDefault()}
-                                    onDrop={(e) => handleDrop(e, rIdx, cIdx)}
-                                    draggable
-                                    onDragStart={(e) => handleKeymapDragStart(e, cell, rIdx, cIdx)}
-                                    onDragEnd={handleDragEnd}
-                                    onClick={() => handleKeymapCellClick(rIdx, cIdx, currentLayer)} /* Added onClick */
-                                >
-                                    {cell.tap ? (
-                                        <>
-                                            <span className="text-2xl font-bold text-red-300">{cell.tap.combo}</span>
-                                            <span className="text-sm text-zinc-400 text-center mt-1">{cell.tap.description}</span>
-                                        </>
-                                    ) : (
-                                        <span className="text-zinc-500">Drag & Drop Here</span>
-                                    )}
-                                    {(cell.tap || cell.hold) && (
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); clearKeymapCell(rIdx, cIdx); }} /* Stop propagation to prevent cell selection */
-                                            className="absolute top-1 right-1 text-zinc-400 hover:text-red-500 text-sm p-1 rounded-full bg-zinc-600 hover:bg-zinc-500 transition-colors"
-                                            title="Clear cell"
-                                        >
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                            </svg>
-                                        </button>
-                                    )}
-                                </div>
-                            ))
+                        {Array(3).fill().map((_, rIdx) => ( // Iterate for 3 rows
+                            Array(3).fill().map((_, cIdx) => { // Iterate for 3 columns
+                                const cellContent = getCellContent(rIdx, cIdx);
+                                const flatIndex = rIdx * 3 + cIdx;
+                                return (
+                                    <div
+                                        key={`${rIdx}-${cIdx}`}
+                                        className={`relative bg-zinc-700 rounded-xl p-4 h-32 flex flex-col items-center justify-center border-2 border-zinc-600 shadow-md
+                                                    hover:border-red-500 transition-all duration-200 cursor-pointer
+                                                    ${selectedKeymapCell && selectedKeymapCell.row === rIdx && selectedKeymapCell.col === cIdx && selectedKeymapCell.layer === currentLayer ? 'border-blue-500 ring-2 ring-blue-500 bg-blue-900 bg-opacity-30' : ''}`}
+                                        onDragOver={(e) => e.preventDefault()}
+                                        onDrop={(e) => handleDrop(e, rIdx, cIdx)}
+                                        draggable
+                                        onDragStart={(e) => handleKeymapDragStart(e, cellContent, rIdx, cIdx)}
+                                        onDragEnd={handleDragEnd}
+                                        onClick={() => handleKeymapCellClick(rIdx, cIdx, currentLayer)}
+                                    >
+                                        {cellContent ? (
+                                            <>
+                                                <span className="text-2xl font-bold text-red-300">{cellContent.combo}</span>
+                                                <span className="text-sm text-zinc-400 text-center mt-1">{cellContent.description}</span>
+                                            </>
+                                        ) : (
+                                            <span className="text-zinc-500">Drag & Drop Here</span>
+                                        )}
+                                        {cellContent && (
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); clearKeymapCell(rIdx, cIdx); }}
+                                                className="absolute top-1 right-1 text-zinc-400 hover:text-red-500 text-sm p-1 rounded-full bg-zinc-600 hover:bg-zinc-500 transition-colors"
+                                                title="Clear cell"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        )}
+                                    </div>
+                                );
+                            })
                         ))}
                     </div>
                 </div>
@@ -903,7 +946,7 @@
         function App() {
             const { useState, useEffect, useCallback } = React;
 
-            // Updated initialGrid to be multi-layered
+            // Updated initialGrid to be multi-layered, now including 'macros' key
             const [keymap, setKeymap] = useState(initialMultiLayerGrid);
             const [shortcutPool, setShortcutPool] = useState(Object.fromEntries(Object.entries(presets).map(([k, v]) => [k, [...v]])));
             const [showModal, setShowModal] = useState(false);
@@ -918,8 +961,8 @@
             const [webSerialSupported, setWebSerialSupported] = useState(false);
 
             const [macros, setMacros] = useState([
-                { id: 1, name: "Hello World", sequence: "Hello World!" },
-                { id: 2, name: "Signature", sequence: "John Doe\nSoftware Engineer" },
+                { id: 1, name: "Macro 1", sequence: "Hello World!" }, // Renamed for consistency with Pico parsing
+                { id: 2, name: "Macro 2", sequence: "John Doe\nSoftware Engineer" }, // Renamed for consistency
             ]);
             const [nextMacroId, setNextMacroId] = useState(3);
 
@@ -951,21 +994,33 @@
                 }
 
                 const newKeymap = JSON.parse(JSON.stringify(keymap));
+                const flatIndex = row * 3 + col;
 
                 if (droppedItem.isKeymapCell) {
                     const sourceRow = droppedItem.sourceRow;
                     const sourceCol = droppedItem.sourceCol;
                     const sourceLayer = droppedItem.sourceLayer;
+                    const sourceFlatIndex = sourceRow * 3 + sourceCol;
 
                     if (sourceLayer === currentLayer) {
-                        const tempCell = newKeymap[currentLayer][row][col];
-                        newKeymap[currentLayer][row][col] = newKeymap[currentLayer][sourceRow][sourceCol];
-                        newKeymap[currentLayer][sourceRow][sourceCol] = tempCell;
+                        // Swap logic for same layer
+                        const tempKey = newKeymap[currentLayer].keys[flatIndex];
+                        const tempLabel = newKeymap[currentLayer].labels[flatIndex];
+
+                        newKeymap[currentLayer].keys[flatIndex] = newKeymap[currentLayer].keys[sourceFlatIndex];
+                        newKeymap[currentLayer].labels[flatIndex] = newKeymap[currentLayer].labels[sourceFlatIndex];
+
+                        newKeymap[currentLayer].keys[sourceFlatIndex] = tempKey;
+                        newKeymap[currentLayer].labels[sourceFlatIndex] = tempLabel;
                     } else {
-                        newKeymap[currentLayer][row][col] = droppedItem.cell;
+                        // Copy from another layer
+                        newKeymap[currentLayer].keys[flatIndex] = droppedItem.cell.combo;
+                        newKeymap[currentLayer].labels[flatIndex] = droppedItem.cell.description;
                     }
                 } else {
-                    newKeymap[currentLayer][row][col] = { tap: droppedItem, hold: null };
+                    // Assign new shortcut
+                    newKeymap[currentLayer].keys[flatIndex] = droppedItem.combo;
+                    newKeymap[currentLayer].labels[flatIndex] = droppedItem.description;
                 }
 
                 setKeymap(newKeymap);
@@ -974,8 +1029,9 @@
             };
 
 
-            const handleKeymapDragStart = (e, cell, row, col) => {
-                const dragData = JSON.stringify({ isKeymapCell: true, cell: cell, sourceRow: row, sourceCol: col, sourceLayer: currentLayer });
+            const handleKeymapDragStart = (e, cellContent, row, col) => {
+                // Pass the combo and description for dragging
+                const dragData = JSON.stringify({ isKeymapCell: true, cell: cellContent, sourceRow: row, sourceCol: col, sourceLayer: currentLayer });
                 e.dataTransfer.setData("text/plain", dragData);
                 setSelectedKeymapCell(null); // Clear any active cell selection on drag start
             };
@@ -991,15 +1047,17 @@
             };
 
             const clearKeymapCell = (rIdx, cIdx) => {
-                const updatedKeymap = keymap.map((layer, lIdx) =>
-                    lIdx === currentLayer
-                        ? layer.map((r, rowIdx) =>
-                              r.map((cell, colIdx) =>
-                                  (rowIdx === rIdx && colIdx === cIdx) ? { tap: null, hold: null } : cell
-                              )
-                          )
-                        : layer
-                );
+                const flatIndex = rIdx * 3 + cIdx;
+                const updatedKeymap = keymap.map((layer, lIdx) => {
+                    if (lIdx === currentLayer) {
+                        const newKeys = [...layer.keys];
+                        const newLabels = [...layer.labels];
+                        newKeys[flatIndex] = null; // Set key to null
+                        newLabels[flatIndex] = ''; // Clear label
+                        return { ...layer, keys: newKeys, labels: newLabels };
+                    }
+                    return layer;
+                });
                 setKeymap(updatedKeymap);
                 setSelectedKeymapCell(null); // Clear selection if the cleared cell was selected
             };
@@ -1019,8 +1077,10 @@
             const handleShortcutClick = (shortcut) => {
                 if (selectedKeymapCell) {
                     const { row, col, layer } = selectedKeymapCell;
+                    const flatIndex = row * 3 + col;
                     const newKeymap = JSON.parse(JSON.stringify(keymap));
-                    newKeymap[layer][row][col] = { tap: shortcut, hold: null };
+                    newKeymap[layer].keys[flatIndex] = shortcut.combo;
+                    newKeymap[layer].labels[flatIndex] = shortcut.description; // Store description as label
                     setKeymap(newKeymap);
                     setSelectedKeymapCell(null); // Clear selection after assignment
                 } else {
@@ -1041,7 +1101,7 @@
                     onConfirm: () => {
                         const updatedKeymap = keymap.map((layer, lIdx) =>
                             lIdx === currentLayer
-                                ? Array(3).fill().map(() => Array(3).fill({ tap: null, hold: null }))
+                                ? { ...layer, keys: Array(9).fill(null), labels: Array(9).fill('') } // Clear keys and labels
                                 : layer
                         );
                         setKeymap(updatedKeymap);
@@ -1101,10 +1161,10 @@
                 const layersForExport = []; // Array of layer objects
 
                 keymap.forEach((layerData, lIdx) => {
-                    const layerName = `Layer ${lIdx}`; // Default name
-                    // Flatten the 3x3 grid into a 1D array of 9 keys
-                    const keys = layerData.flat().map(cell => cell.tap ? cell.tap.combo : "");
-                    const labels = layerData.flat().map(cell => cell.tap ? cell.tap.description : "");
+                    // Ensure layerData has 'name', 'labels', 'keys'
+                    const layerName = layerData.name || `Layer ${lIdx}`;
+                    const keys = layerData.keys.map(key => key || ""); // Replace null with empty string
+                    const labels = layerData.labels.map(label => label || ""); // Replace null with empty string
 
                     layersForExport.push({
                         name: layerName,
@@ -1115,9 +1175,10 @@
 
                 const fullExportData = layersForExport; // The root is now the array of layers
 
-                // Macros are separate in Pico's layers.json, typically added to the first layer
+                // Macros are typically added to the first layer in Pico's layers.json
                 if (macros.length > 0) {
                     if (fullExportData.length > 0) {
+                         // Ensure macros are stored as {name: "Macro X", sequence: "..."}
                          fullExportData[0].macros = macros.map(m => ({ name: m.name, sequence: m.sequence }));
                     }
                 }
@@ -1153,9 +1214,9 @@
                     // Transform the internal multi-layer keymap state to the Pico-friendly layers.json format
                     const layersForUpload = [];
                     keymap.forEach((layerData, lIdx) => {
-                        const layerName = `Layer ${lIdx}`;
-                        const keys = layerData.flat().map(cell => cell.tap ? cell.tap.combo : "");
-                        const labels = layerData.flat().map(cell => cell.tap ? cell.tap.description : "");
+                        const layerName = layerData.name || `Layer ${lIdx}`;
+                        const keys = layerData.keys.map(key => key || "");
+                        const labels = layerData.labels.map(label => label || "");
 
                         layersForUpload.push({
                             name: layerName,
@@ -1197,36 +1258,41 @@
 
                     // Expecting an array of layer objects for layers.json
                     if (Array.isArray(parsedJson)) {
-                        const newKeymap = Array(NUM_LAYERS_PICO).fill().map(() =>
-                            Array(3).fill().map(() => Array(3).fill({ tap: null, hold: null }))
-                        );
+                        const newKeymap = Array(NUM_LAYERS_PICO).fill().map((_, layerIdx) => ({
+                            name: `Layer ${layerIdx}`,
+                            labels: Array(9).fill(''),
+                            keys: Array(9).fill(null),
+                            macros: []
+                        }));
                         let loadedMacros = [];
+                        let maxMacroId = 0;
 
                         parsedJson.forEach((layerData, lIdx) => {
                             if (lIdx < NUM_LAYERS_PICO) { // Only load up to NUM_LAYERS_PICO
                                 if (layerData.keys && Array.isArray(layerData.keys) && layerData.keys.length === 9) {
-                                    layerData.keys.forEach((combo, keyIndex) => {
-                                        const rIdx = Math.floor(keyIndex / 3);
-                                        const cIdx = keyIndex % 3;
-                                        const description = layerData.labels && layerData.labels[keyIndex] ? layerData.labels[keyIndex] : combo;
-
-                                        newKeymap[lIdx][rIdx][cIdx] = {
-                                            tap: combo ? { combo: combo, description: description } : null,
-                                            hold: null // Pico doc doesn't mention hold, so keep null
-                                        };
-                                    });
+                                    newKeymap[lIdx].keys = [...layerData.keys]; // Directly assign keys array
                                 }
+                                if (layerData.labels && Array.isArray(layerData.labels) && layerData.labels.length === 9) {
+                                    newKeymap[lIdx].labels = [...layerData.labels]; // Directly assign labels array
+                                }
+                                if (layerData.name) {
+                                    newKeymap[lIdx].name = layerData.name;
+                                }
+
                                 // Load macros if present in this layer (Pico doc suggests macros per layer, typically first)
                                 if (layerData.macros && Array.isArray(layerData.macros)) {
-                                    // Ensure unique IDs for loaded macros
-                                    const newMacros = layerData.macros.map((m, idx) => ({ id: nextMacroId + loadedMacros.length + idx, name: m.name, sequence: m.sequence }));
-                                    loadedMacros = [...loadedMacros, ...newMacros];
+                                    const newMacrosForLayer = layerData.macros.map((m) => {
+                                        const id = nextMacroId + loadedMacros.length; // Assign a temporary ID
+                                        maxMacroId = Math.max(maxMacroId, id);
+                                        return { id: id, name: m.name, sequence: m.sequence };
+                                    });
+                                    loadedMacros = [...loadedMacros, ...newMacrosForLayer];
                                 }
                             }
                         });
                         setKeymap(newKeymap);
                         setMacros(loadedMacros);
-                        setNextMacroId(loadedMacros.length + 1); // Update nextMacroId based on loaded macros
+                        setNextMacroId(maxMacroId + 1); // Update nextMacroId based on loaded macros
 
                         // Potentiometer config is not part of Pico's layers.json, so reset or keep default
                         setPotentiometerConfig({ enabled: false, pin: 34, function: 'volume', customAction: '' });
@@ -1254,7 +1320,7 @@
 
             // Macro functions
             const addMacro = () => {
-                const name = prompt("Enter macro name:");
+                const name = prompt("Enter macro name (e.g., Macro 1):");
                 if (!name) return;
                 const sequence = prompt("Enter macro sequence (e.g., 'Hello World!'):");
                 if (sequence) {
