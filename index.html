@@ -42,453 +42,311 @@
 
         // Constants with ALL shortcuts from the PDF, adapted for CircuitPython Keycode names
         const presets = {
-            "BASIC": [
-                { combo: "M", description: "Move" },
-                { combo: "V", description: "View/Via" },
-                { combo: "R", description: "Rotate/Reload" },
-                { combo: "DELETE", description: "Delete/Zoom Out/Respawn" }, // Renamed from Del
-                { combo: "CONTROL_Z", description: "Undo" }, // Renamed from Ctrl+Z
-                { combo: "CONTROL_Y", description: "Redo" }, // Renamed from Ctrl+Y
-                { combo: "F1", description: "Help/Camera" },
-                { combo: "F2", description: "Rename/Toggle Cockpit" },
-                { combo: "F3", description: "Search/Chase Camera/Record" },
-                { combo: "L", description: "Line/Headlights" },
-                { combo: "E", description: "Extrude/Move Up/Switch Soldier" },
-                { combo: "P", description: "Project/Place Component/Print" },
-                { combo: "C", description: "Circle/Free Camera/Commander Cam/Crouch" },
-                { combo: "Q", description: "Press/Pull/Drop Item/Roll Left/Move Down/Switch Soldier" },
-                { combo: "X", description: "Cut/Look Left/Machine Gun/Lean Left" },
-                { combo: "S", description: "Sketch/Throttle Down/Move Backward" },
-                { combo: "T", description: "Text/Rotate/Target/Pick Weapon/Add Text" },
-                { combo: "CONTROL_C", description: "Copy" },
-                { combo: "CONTROL_V", description: "Paste" },
-                { combo: "CONTROL_X", description: "Cut" },
-                { combo: "CONTROL_S", description: "Save" },
-                { combo: "CONTROL_D", description: "Duplicate" },
-                { combo: "CONTROL_G", description: "Group" },
-                { combo: "CONTROL_U", description: "Ungroup" },
-                { combo: "CONTROL_P", description: "Publish/Command Palette/Print" },
-                { combo: "CONTROL_F", description: "Find" },
-                { combo: "CONTROL_H", description: "Replace/Highlight Net" },
-                { combo: "CONTROL_L", description: "Lock/Align Left" },
-                { combo: "CONTROL_R", description: "Align Right" },
-                { combo: "CONTROL_B", description: "Rebuild Ratsnest/Break Joints/Bold" },
-                { combo: "CONTROL_J", description: "Join Surfaces/Joint" },
-                { combo: "CONTROL_M", description: "Material" },
-                { combo: "CONTROL_K", description: "Link" },
-                { combo: "CONTROL_E", description: "Align Center" },
-                { combo: "ALT_DRAG", description: "Duplicate/Orbit" }, // Custom combo, needs special handling in Pico
-                { combo: "SHIFT_ARROW", description: "Nudge" }, // Changed from Shift+Arrow
-                { combo: "SHIFT_SPACEBAR", description: "Cycle Units/Fire Rocket" }, // Renamed from Shift+Space
-                { combo: "SHIFT_DRAG", description: "Constrain" }, // Custom combo, needs special handling in Pico
-                { combo: "SCROLL", description: "Zoom" }, // Changed from Scroll
-                { combo: "MOUSE_BUTTON_2", description: "Zoom (Mouse 2)" }, // Changed from Mouse 2
-                { combo: "MOUSE_BUTTON_1", description: "Fire Guns/Click (Mouse 1)" }, // Changed from Mouse 1
-                { combo: "MOUSE_BUTTON_3", description: "Track Enemy/Ping (Mouse 3)" }, // Changed from Mouse 3
-                { combo: "TAB", description: "Player List/Scoreboard/Switch Input" },
-                { combo: "ESCAPE", description: "Menu" }, // Renamed from Esc
-                { combo: "ENTER", description: "Chat" },
-                { combo: "BACKSPACE", description: "Leave Vehicle/Suicide" }, // Renamed
-                { combo: "HOME", description: "Reset View" },
-                { combo: "INSERT", description: "Zoom In" }, // Renamed from Ins
-                { combo: "ALT_ENTER", description: "Fullscreen" }, // Custom combo
-                { combo: "ALT", description: "Free Look" },
-                { combo: "MIDDLE_CLICK", description: "Pick Block" }, // Changed from Middle Click
-                { combo: "MOUSE_WHEEL", description: "Scroll Hotbar/Change Weapon" }, // Changed from Mouse wheel
-                { combo: "RIGHT_CLICK", description: "Aim" }, // Changed from Right Click
+            "STANDARD_KEYS": [
+                { combo: "A", description: "Letter A" },
+                { combo: "B", description: "Letter B" },
+                { combo: "C", description: "Letter C" },
+                { combo: "D", description: "Letter D" },
+                { combo: "E", description: "Letter E" },
+                { combo: "F", description: "Letter F" },
+                { combo: "G", description: "Letter G" },
+                { combo: "H", description: "Letter H" },
+                { combo: "I", description: "Letter I" },
+                { combo: "J", description: "Letter J" },
+                { combo: "K", description: "Letter K" },
+                { combo: "L", description: "Letter L" },
+                { combo: "M", description: "Letter M" },
+                { combo: "N", description: "Letter N" },
+                { combo: "O", description: "Letter O" },
+                { combo: "P", description: "Letter P" },
+                { combo: "Q", description: "Letter Q" },
+                { combo: "R", description: "Letter R" },
+                { combo: "S", description: "Letter S" },
+                { combo: "T", description: "Letter T" },
+                { combo: "U", description: "Letter U" },
+                { combo: "V", description: "Letter V" },
+                { combo: "W", description: "Letter W" },
+                { combo: "X", description: "Letter X" },
+                { combo: "Y", description: "Letter Y" },
+                { combo: "Z", description: "Letter Z" },
+                { combo: "ONE", description: "Number 1" },
+                { combo: "TWO", description: "Number 2" },
+                { combo: "THREE", description: "Number 3" },
+                { combo: "FOUR", description: "Number 4" },
+                { combo: "FIVE", description: "Number 5" },
+                { combo: "SIX", description: "Number 6" },
+                { combo: "SEVEN", description: "Number 7" },
+                { combo: "EIGHT", description: "Number 8" },
+                { combo: "NINE", description: "Number 9" },
+                { combo: "ZERO", description: "Number 0" },
+                { combo: "ENTER", description: "Enter Key" },
+                { combo: "ESCAPE", description: "Escape Key" },
+                { combo: "TAB", description: "Tab Key" },
+                { combo: "SPACEBAR", description: "Spacebar" },
+                { combo: "BACKSPACE", description: "Backspace Key" },
+                { combo: "DELETE", description: "Delete Key" },
+                { combo: "CAPS_LOCK", description: "Caps Lock" },
+                { combo: "F1", description: "Function Key F1" },
+                { combo: "F2", description: "Function Key F2" },
+                { combo: "F3", description: "Function Key F3" },
+                { combo: "F4", description: "Function Key F4" },
+                { combo: "F5", description: "Function Key F5" },
+                { combo: "F6", description: "Function Key F6" },
+                { combo: "F7", description: "Function Key F7" },
+                { combo: "F8", description: "Function Key F8" },
+                { combo: "F9", description: "Function Key F9" },
+                { combo: "F10", description: "Function Key F10" },
+                { combo: "F11", description: "Function Key F11" },
+                { combo: "F12", description: "Function Key F12" },
+                { combo: "PRINT_SCREEN", description: "Print Screen" },
+                { combo: "SCROLL_LOCK", description: "Scroll Lock" },
+                { combo: "PAUSE", description: "Pause Break" },
+                { combo: "INSERT", description: "Insert Key" },
+                { combo: "HOME", description: "Home Key" },
+                { combo: "PAGE_UP", description: "Page Up" },
+                { combo: "PAGE_DOWN", description: "Page Down" },
+                { combo: "END", description: "End Key" },
+                { combo: "RIGHT_ARROW", description: "Right Arrow" },
+                { combo: "LEFT_ARROW", description: "Left Arrow" },
+                { combo: "DOWN_ARROW", description: "Down Arrow" },
+                { combo: "UP_ARROW", description: "Up Arrow" },
+                { combo: "KEYPAD_NUMLOCK", description: "Keypad Num Lock" },
+                { combo: "KEYPAD_SLASH", description: "Keypad /" },
+                { combo: "KEYPAD_ASTERISK", description: "Keypad *" },
+                { combo: "KEYPAD_MINUS", description: "Keypad -" },
+                { combo: "KEYPAD_PLUS", description: "Keypad +" },
+                { combo: "KEYPAD_ENTER", description: "Keypad Enter" },
+                { combo: "KEYPAD_ONE", description: "Keypad 1" },
+                { combo: "KEYPAD_TWO", description: "Keypad 2" },
+                { combo: "KEYPAD_THREE", description: "Keypad 3" },
+                { combo: "KEYPAD_FOUR", description: "Keypad 4" },
+                { combo: "KEYPAD_FIVE", description: "Keypad 5" },
+                { combo: "KEYPAD_SIX", description: "Keypad 6" },
+                { combo: "KEYPAD_SEVEN", description: "Keypad 7" },
+                { combo: "KEYPAD_EIGHT", description: "Keypad 8" },
+                { combo: "KEYPAD_NINE", description: "Keypad 9" },
+                { combo: "KEYPAD_ZERO", description: "Keypad 0" },
+                { combo: "KEYPAD_PERIOD", description: "Keypad ." },
+                { combo: "NON_US_SLASH", description: "Non-US /" },
+                { combo: "APPLICATION", description: "Application Key (Menu Key)" },
+                { combo: "COMMA", description: "Comma ," },
+                { combo: "PERIOD", description: "Period ." },
+                { combo: "GRAVE_ACCENT", description: "Grave Accent `" },
+                { combo: "MINUS", description: "Minus -" },
+                { combo: "EQUAL", description: "Equal =" },
+                { combo: "LEFT_BRACKET", description: "Left Bracket [" },
+                { combo: "RIGHT_BRACKET", description: "Right Bracket ]" },
+                { combo: "BACKSLASH", description: "Backslash \\" },
+                { combo: "SEMICOLON", description: "Semicolon ;" },
+                { combo: "QUOTE", description: "Quote '" },
+                { combo: "SLASH", description: "Slash /" },
             ],
-            "MEDIA": [
-                { combo: "SCAN_PREVIOUS_TRACK", description: "Prev Track" }, // Renamed from KC_MPRV
-                { combo: "SCAN_NEXT_TRACK", description: "Next Track" },     // Renamed from KC_MNXT
-                { combo: "PLAY_PAUSE", description: "Play/Pause" },         // Renamed from KC_MPLY
-                { combo: "MUTE", description: "Mute" },                     // Renamed from KC_MUTE
-                { combo: "VOLUME_INCREMENT", description: "Volume Up" },    // Renamed from KC_VOLU
-                { combo: "VOLUME_DECREMENT", description: "Volume Down" },  // Renamed from KC_VOLD
+            "MODIFIER_KEYS": [
+                { combo: "LEFT_CONTROL", description: "Left Control" },
+                { combo: "LEFT_SHIFT", description: "Left Shift" },
+                { combo: "LEFT_ALT", description: "Left Alt" },
+                { combo: "LEFT_GUI", description: "Left GUI (Windows/Command)" },
+                { combo: "RIGHT_CONTROL", description: "Right Control" },
+                { combo: "RIGHT_SHIFT", description: "Right Shift" },
+                { combo: "RIGHT_ALT", description: "Right Alt (AltGr)" },
+                { combo: "RIGHT_GUI", description: "Right GUI (Windows/Command)" },
             ],
-            "MACRO": [
-                { combo: "MACRO_1", description: "Macro 1" },
-                { combo: "MACRO_2", description: "Macro 2" },
-                { combo: "MACRO_3", description: "Macro 3" },
+            "COMBINATION_SHORTCUTS": [
+                { combo: "CONTROL_C", description: "Copy (Ctrl+C)" },
+                { combo: "CONTROL_V", description: "Paste (Ctrl+V)" },
+                { combo: "CONTROL_X", description: "Cut (Ctrl+X)" },
+                { combo: "CONTROL_Z", description: "Undo (Ctrl+Z)" },
+                { combo: "CONTROL_Y", description: "Redo (Ctrl+Y)" },
+                { combo: "CONTROL_S", description: "Save (Ctrl+S)" },
+                { combo: "ALT_TAB", description: "Switch Applications (Alt+Tab)" },
+                { combo: "GUI_D", description: "Show Desktop (Win+D)" },
+                { combo: "CONTROL_SHIFT_ESCAPE", description: "Open Task Manager (Ctrl+Shift+Esc)" },
+                { combo: "CONTROL_A", description: "Select All (Ctrl+A)" },
+                { combo: "CONTROL_F", description: "Find (Ctrl+F)" },
+                { combo: "CONTROL_P", description: "Print (Ctrl+P)" },
+                { combo: "CONTROL_L", description: "Lock/Align Left (Ctrl+L)" },
+                { combo: "CONTROL_R", description: "Align Right (Ctrl+R)" },
+                { combo: "CONTROL_E", description: "Align Center (Ctrl+E)" },
+                { combo: "CONTROL_D", description: "Duplicate (Ctrl+D)" },
+                { combo: "CONTROL_G", description: "Group (Ctrl+G)" },
+                { combo: "CONTROL_U", description: "Ungroup (Ctrl+U)" },
+                { combo: "CONTROL_K", description: "Link (Ctrl+K)" },
+                { combo: "CONTROL_H", description: "Replace/Highlight (Ctrl+H)" },
+                { combo: "CONTROL_B", description: "Bold (Ctrl+B)" },
+                { combo: "CONTROL_I", description: "Italic (Ctrl+I)" },
+                { combo: "CONTROL_U", description: "Underline (Ctrl+U)" },
+                { combo: "ALT_ENTER", description: "Toggle Fullscreen (Alt+Enter)" },
+                { combo: "SHIFT_ARROW", description: "Nudge (Shift+Arrow)" }, // Custom combo
+                { combo: "SHIFT_SPACEBAR", description: "Cycle Units (Shift+Space)" },
+                { combo: "CONTROL_SPACEBAR", description: "Trigger Suggestion (Ctrl+Space)" },
+                { combo: "CONTROL_FORWARD_SLASH", description: "Comment Line (Ctrl+/)" },
+                { combo: "ALT_UP_ARROW", description: "Move Line Up (Alt+Up)" },
+                { combo: "ALT_DOWN_ARROW", description: "Move Line Down (Alt+Down)" },
+                { combo: "SHIFT_ALT_DOWN_ARROW", description: "Copy Line Down (Shift+Alt+Down)" },
+                { combo: "CONTROL_SHIFT_K", description: "Delete Line (Ctrl+Shift+K)" },
+                { combo: "CONTROL_ENTER", description: "Insert Line Below (Ctrl+Enter)" },
+                { combo: "CONTROL_SHIFT_ENTER", description: "Insert Line Above (Ctrl+Shift+Enter)" },
+                { combo: "CONTROL_SHIFT_RIGHT_BRACKET", description: "Jump to Bracket (Ctrl+Shift+])" },
+                { combo: "CONTROL_TAB", description: "Next Editor (Ctrl+Tab)" },
+                { combo: "CONTROL_SHIFT_TAB", description: "Previous Editor (Ctrl+Shift+Tab)" },
+                { combo: "CONTROL_W", description: "Close Editor (Ctrl+W)" },
+                { combo: "CONTROL_ALT_T", description: "Open Terminal (Ctrl+Alt+T)" },
+                { combo: "CONTROL_SHIFT_P", description: "Command Palette (Ctrl+Shift+P)" },
+                { combo: "CONTROL_GRAVE_ACCENT", description: "Terminal Toggle (Ctrl+`)" },
+                { combo: "CONTROL_B", description: "Sidebar Toggle (Ctrl+B)" },
+                { combo: "CONTROL_J", description: "Panel Toggle (Ctrl+J)" },
+                { combo: "CONTROL_SHIFT_E", description: "Explorer (Ctrl+Shift+E)" },
+                { combo: "CONTROL_SHIFT_F", description: "Search in Files (Ctrl+Shift+F)" },
+                { combo: "CONTROL_SHIFT_G", description: "Git (Ctrl+Shift+G)" },
+                { combo: "CONTROL_SHIFT_D", description: "Debug (Ctrl+Shift+D)" },
+                { combo: "CONTROL_SHIFT_X", description: "Extensions (Ctrl+Shift+X)" },
+                { combo: "CONTROL_SHIFT_S", description: "Save As (Ctrl+Shift+S)" },
+                { combo: "CONTROL_N", description: "New File/Project (Ctrl+N)" },
+                { combo: "CONTROL_O", description: "Open File/Project (Ctrl+O)" },
+                { combo: "CONTROL_Q", description: "Quit Application (Ctrl+Q)" },
+                { combo: "CONTROL_ALT_DELETE", description: "Force Quit (Ctrl+Alt+Del)" },
+                { combo: "CONTROL_SHIFT", description: "Walk (Ctrl+Shift)" },
+                { combo: "CONTROL_F1", description: "Switch Class (Ctrl+F1)" },
+                { combo: "ALT_V", description: "Change View (Alt+V)" },
+                { combo: "ALT_M", description: "Minimap (Alt+M)" },
+                { combo: "CONTROL_R", description: "Reload Prone (Ctrl+R)" },
+                { combo: "ALT_F4", description: "Close Window (Alt+F4)" },
+                { combo: "CONTROL_Y", description: "Chat Channel (Ctrl+Y)" },
+                { combo: "CONTROL_G", description: "Gunner View (Ctrl+G)" },
+                { combo: "CONTROL_T", description: "Anchor (Ctrl+T)" },
+                { combo: "CONTROL_SHIFT_M", description: "Model (Ctrl+Shift+M)" },
+                { combo: "CONTROL_ALT_T", description: "Terrain Editor (Ctrl+Alt+T)" },
+                { combo: "CONTROL_SHIFT_R", description: "Run (Ctrl+Shift+R)" },
+                { combo: "CONTROL_SHIFT_T", description: "Test (Ctrl+Shift+T)" },
+                { combo: "CONTROL_SHIFT_F", description: "Search All (Ctrl+Shift+F)" },
+                { combo: "CONTROL_SHIFT_D", description: "Download (Ctrl+Shift+D)" },
+                { combo: "CONTROL_SHIFT_C", description: "Output (Ctrl+Shift+C)" },
+                { combo: "CONTROL_SHIFT_H", description: "View Explorer (Ctrl+Shift+H)" },
+                { combo: "CONTROL_SHIFT_X", description: "Properties (Ctrl+Shift+X)" },
+                { combo: "CONTROL_SHIFT_E", description: "Toolbox/Export (Ctrl+Shift+E)" },
+                { combo: "ALT_LEFT_BRACKET", description: "Layer Back (Alt+[)" },
+                { combo: "ALT_RIGHT_BRACKET", description: "Layer Front (Alt+])" },
+                { combo: "ALT_SHIFT_E", description: "Export (Alt+Shift+E)" },
             ],
-            "LAYERS": [
-                { combo: "TG_1", description: "Toggle Layer 1" }, // Renamed from TG(1)
-                { combo: "MO_1", description: "Momentary Layer 1" }, // Renamed from MO(1)
-                { combo: "TO_0", description: "To Layer 0" }, // Renamed from TO(0)
+            "MEDIA_CONTROLS": [
+                { combo: "VOLUME_INCREMENT", description: "Volume Up" },
+                { combo: "VOLUME_DECREMENT", description: "Volume Down" },
+                { combo: "MUTE", description: "Mute Volume" },
+                { combo: "PLAY_PAUSE", description: "Play/Pause Media" },
+                { combo: "SCAN_PREVIOUS_TRACK", description: "Previous Track" },
+                { combo: "SCAN_NEXT_TRACK", description: "Next Track" },
             ],
-            "SPECIAL": [
-                { combo: "POWER", description: "Power" },   // Renamed from KC_PWR
-                { combo: "SLEEP", description: "Sleep" },   // Renamed from KC_SLEP
-                { combo: "WAKE", description: "Wake" },     // Renamed from KC_WAKE
+            "MOUSE_ACTIONS": [
+                { combo: "MOUSE_BUTTON_1", description: "Left Click" },
+                { combo: "MOUSE_BUTTON_2", description: "Right Click" },
+                { combo: "MOUSE_BUTTON_3", description: "Middle Click" },
+                { combo: "MOUSE_WHEEL_UP", description: "Scroll Up" },
+                { combo: "MOUSE_WHEEL_DOWN", description: "Scroll Down" },
+                { combo: "ALT_DRAG", description: "Alt + Drag (Custom)" }, // Custom combo
+                { combo: "SHIFT_DRAG", description: "Shift + Drag (Custom)" }, // Custom combo
+                { combo: "CONTROL_CLICK", description: "Ctrl + Click (Custom)" },
+                { combo: "CONTROL_MIDDLE_CLICK", description: "Ctrl + Middle Click (Custom)" },
+                { combo: "SHIFT_LEFT_CLICK", description: "Shift + Left Click (Custom)" },
+                { combo: "SHIFT_RIGHT_CLICK", description: "Shift + Right Click (Custom)" },
+                { combo: "DOUBLE_CLICK", description: "Double Click (Custom)" },
             ],
-            "QMK LIGHTING": [
-                { combo: "RGB_TOG", description: "RGB Toggle" }, // These are not standard HID, will require custom handling on Pico
+            "MACROS": [
+                { combo: "MACRO_1", description: "Macro 1 (Custom)" },
+                { combo: "MACRO_2", description: "Macro 2 (Custom)" },
+                { combo: "MACRO_3", description: "Macro 3 (Custom)" },
+            ],
+            "LAYER_CONTROLS": [
+                { combo: "TG_1", description: "Toggle Layer 1" },
+                { combo: "MO_1", description: "Momentary Layer 1" },
+                { combo: "TO_0", description: "Jump To Layer 0" },
+            ],
+            "SYSTEM_CONTROLS": [
+                { combo: "POWER", description: "System Power" },
+                { combo: "SLEEP", description: "System Sleep" },
+                { combo: "WAKE", description: "System Wake" },
+            ],
+            "RGB_LIGHTING_CONTROLS": [
+                { combo: "RGB_TOG", description: "RGB Toggle" },
                 { combo: "RGB_MOD", description: "RGB Mode" },
-                { combo: "RGB_HUI", description: "Hue Inc" },
-                { combo: "RGB_HUD", description: "Hue Dec" },
-                { combo: "RGB_SAI", description: "Sat Inc" },
-                { combo: "RGB_SAD", description: "Sat Dec" },
-                { combo: "RGB_VAI", description: "Val Inc" },
-                { combo: "RGB_VAD", description: "Val Dec" },
+                { combo: "RGB_HUI", description: "RGB Hue Increment" },
+                { combo: "RGB_HUD", description: "RGB Hue Decrement" },
+                { combo: "RGB_SAI", description: "RGB Saturation Increment" },
+                { combo: "RGB_SAD", description: "RGB Saturation Decrement" },
+                { combo: "RGB_VAI", description: "RGB Value Increment" },
+                { combo: "RGB_VAD", description: "RGB Value Decrement" },
             ],
-            "MINECRAFT": [
-                { combo: "W", description: "Move Forward" },
-                { combo: "A", description: "Move Left" },
-                { combo: "S", description: "Move Backward" },
-                { combo: "D", description: "Move Right" },
-                { combo: "SPACEBAR", description: "Jump" }, // Renamed from Space
-                { combo: "LEFT_SHIFT", description: "Sneak" }, // Renamed from Shift
-                { combo: "LEFT_CONTROL", description: "Sprint" }, // Renamed from Ctrl
-                { combo: "E", description: "Open Inventory" },
-                { combo: "Q", description: "Drop Selected Item" },
-                { combo: "T", description: "Open Chat" },
-                { combo: "F3_D", description: "Clear Chat" }, // Renamed from F3+D
-                { combo: "F5", description: "Change Camera" },
-                { combo: "F8", description: "Smooth Camera" },
-                { combo: "DOUBLE_SPACE", description: "Fly Toggle (Creative)" }, // Renamed from Double Space
-                { combo: "CONTROL_MIDDLE_CLICK", description: "Copy Block with NBT" }, // Renamed from Ctrl+Middle Click
-                { combo: "SHIFT_LEFT_CLICK", description: "Destroy Instantly (Creative)" }, // Renamed from Shift+Left Click
-                { combo: "SHIFT_RIGHT_CLICK", description: "Edit Command Block (Creative)" }, // Renamed from Shift+Right Click
-                { combo: "SHIFT_CLICK", description: "Move Stack (Inventory)/Craft All" }, // Renamed from Shift+Click
-                { combo: "CONTROL_Q", description: "Drop Stack" }, // Renamed from Ctrl+Q
-                { combo: "CONTROL_CLICK", description: "Select Same Items" }, // Renamed from Ctrl+Click
-                { combo: "DOUBLE_CLICK", description: "Grab All of That Item" }, // Renamed from Double Click
-                { combo: "NUMBER_HOVER", description: "Move Item to Hotbar" }, // Renamed from Number+Hover
-                { combo: "F3_N", description: "Switch Gamemode" }, // Renamed from F3+N
-                { combo: "ALT_F4", description: "Rage Quit" }, // Renamed from Alt+F4
-                { combo: "F3_C", description: "Force Crash" }, // Renamed from F3+C
-                { combo: "F3_A", description: "Reload Chunks" }, // Renamed from F3+A
+            "MINECRAFT_SPECIFIC": [
+                { combo: "W_KEY", description: "Move Forward" },
+                { combo: "A_KEY", description: "Move Left" },
+                { combo: "S_KEY", description: "Move Backward" },
+                { combo: "D_KEY", description: "Move Right" },
+                { combo: "DOUBLE_SPACE", description: "Fly Toggle (Creative)" },
+                { combo: "NUMBER_HOVER", description: "Move Item to Hotbar" },
+                { combo: "F3_D", description: "Clear Chat (F3+D)" },
+                { combo: "F3_N", description: "Switch Gamemode (F3+N)" },
+                { combo: "F3_C", description: "Force Crash (F3+C)" },
+                { combo: "F3_A", description: "Reload Chunks (F3+A)" },
             ],
-            "WAR THUNDER": [
-                { combo: "W_S", description: "Throttle Up/Down" }, // Renamed from W/S
-                { combo: "A_D", description: "Rudder Left/Right" }, // Renamed from A/D
-                { combo: "Q_E", description: "Roll Left/Right" }, // Renamed from Q/E
-                { combo: "LEFT_SHIFT", description: "Afterburner/Speed Boost" }, // Renamed from Shift
-                { combo: "LEFT_CONTROL", description: "Air Brake" }, // Renamed from Ctrl
-                { combo: "G", description: "Landing Gear/Grenade" },
-                { combo: "F", description: "Flaps/Interact/Plant/Diffuse" },
-                { combo: "V", description: "View Mode/Binocular View/Melee" },
-                { combo: "C", description: "Free Camera/Commander Cam/Lean Right" },
-                { combo: "X", description: "Look Left/Machine Gun/Lean Left" },
-                { combo: "Z", description: "Look Right" },
-                { combo: "Y", description: "Look Back/Orders" },
-                { combo: "B", description: "Bomb View/Fire Mode" },
-                { combo: "N", description: "Navigation Lights/Night Vision" },
-                { combo: "J", description: "Bail Out" },
-                { combo: "M", description: "Map" },
-                { combo: "T", description: "Target/Mark Enemy" },
-                { combo: "R", description: "Radar/Rangefinder/Reload" },
-                { combo: "H", description: "Head Tracking/Help" },
-                { combo: "SPACEBAR", description: "Fire Main Guns" }, // Renamed from Space
-                { combo: "LEFT_ALT", description: "Fire Secondary" }, // Renamed from Alt
-                { combo: "CONTROL_SPACEBAR", description: "Drop Bomb" }, // Renamed from Ctrl+Space
-                { combo: "F10", description: "Save Replay" },
-                { combo: "ALT_PRINT_SCREEN", description: "Screenshot" }, // Renamed from Alt+PrintScreen
-                { combo: "CONTROL_Y", description: "Chat Channel" }, // Renamed from Ctrl+Y
-                { combo: "CONTROL_G", description: "Gunner View" }, // Renamed from Ctrl+G
-                { combo: "O", description: "Toggle Optics" },
-                { combo: "K", description: "Thermal/IR/Kill Feed" },
-                { combo: "L", description: "Headlights/Flashlight" },
-                { combo: "ONE", description: "Weapon 1" }, // Changed from 1-3
-                { combo: "TWO", description: "Weapon 2" },
-                { combo: "THREE", description: "Weapon 3" },
-                { combo: "U", description: "Repair/Medkit" },
+            "WAR_THUNDER_SPECIFIC": [
+                { combo: "W_S_THROTTLE", description: "Throttle Up/Down (W/S)" },
+                { combo: "A_D_RUDDER", description: "Rudder Left/Right (A/D)" },
+                { combo: "Q_E_ROLL", description: "Roll Left/Right (Q/E)" },
+                { combo: "HOLD_T", description: "Mark Enemy (Hold T)" },
+                { combo: "HOLD_SHIFT", description: "Sprint Long (Hold Shift)" },
+                { combo: "HOLD_F", description: "Plant/Diffuse (Hold F)" },
+                { combo: "CONTROL_NUMBER", description: "Squad Command (Ctrl+Number)" },
+                { combo: "SHIFT_ONE", description: "Formation 1 (Shift+1)" },
+                { combo: "SHIFT_TWO", description: "Formation 2 (Shift+2)" },
+                { combo: "SHIFT_THREE", description: "Formation 3 (Shift+3)" },
+                { combo: "SHIFT_FOUR", description: "Formation 4 (Shift+4)" },
             ],
-            "ROBLOX STUDIO": [
-                { combo: "CONTROL_S", description: "Save" }, // Renamed from Ctrl+S
-                { combo: "CONTROL_SHIFT_S", description: "Save As" }, // Renamed from Ctrl+Shift+S
-                { combo: "CONTROL_N", description: "New Place" }, // Renamed from Ctrl+N
-                { combo: "CONTROL_O", description: "Open Place" }, // Renamed from Ctrl+O
-                { combo: "CONTROL_Z", description: "Undo" }, // Renamed from Ctrl+Z
-                { combo: "CONTROL_Y", description: "Redo" }, // Renamed from Ctrl+Y
-                { combo: "CONTROL_C", description: "Copy" }, // Renamed from Ctrl+C
-                { combo: "CONTROL_V", description: "Paste" }, // Renamed from Ctrl+V
-                { combo: "CONTROL_X", description: "Cut" }, // Renamed from Ctrl+X
-                { combo: "CONTROL_D", description: "Duplicate" }, // Renamed from Ctrl+D
-                { combo: "CONTROL_G", description: "Group" }, // Renamed from Ctrl+G
-                { combo: "CONTROL_U", description: "Ungroup" }, // Renamed from Ctrl+U
-                { combo: "CONTROL_P", description: "Publish" }, // Renamed from Ctrl+P
-                { combo: "F", description: "Focus Selection" },
-                { combo: "SHIFT_F", description: "Follow Camera" }, // Renamed from Shift+F
-                { combo: "ALT_CLICK", description: "Select Parent" }, // Renamed from Alt+Click
-                { combo: "CONTROL_CLICK", description: "Multi-select" }, // Renamed from Ctrl+Click
-                { combo: "CONTROL_SHIFT_H", description: "View Explorer" }, // Renamed from Ctrl+Shift+H
-                { combo: "CONTROL_SHIFT_X", description: "Properties" }, // Renamed from Ctrl+Shift+X
-                { combo: "CONTROL_SHIFT_C", description: "Output" }, // Renamed from Ctrl+Shift+C
-                { combo: "CONTROL_SHIFT_D", description: "Asset Manager" }, // Renamed from Ctrl+Shift+D
-                { combo: "CONTROL_SHIFT_E", description: "Toolbox/Export" }, // Renamed from Ctrl+Shift+E
-                { combo: "W", description: "Camera Move Forward" },
-                { combo: "A", description: "Camera Move Left" },
-                { combo: "S", description: "Camera Move Backward" },
-                { combo: "D", description: "Camera Move Right" },
-                { combo: "E", description: "Move Up" },
-                { combo: "Q", description: "Move Down" },
-                { combo: "T", description: "Rotate" },
-                { combo: "R", description: "Resize" },
-                { combo: "G", description: "Move" },
-                { combo: "CONTROL_T", description: "Anchor" }, // Renamed from Ctrl+T
-                { combo: "CONTROL_L", description: "Lock" }, // Renamed from Ctrl+L
-                { combo: "CONTROL_B", description: "Break Joints" }, // Renamed from Ctrl+B
-                { combo: "CONTROL_J", description: "Join Surfaces" }, // Renamed from Ctrl+J
-                { combo: "CONTROL_M", description: "Material" }, // Renamed from Ctrl+M
-                { combo: "CONTROL_SHIFT_M", description: "Model" }, // Renamed from Ctrl+Shift+M
-                { combo: "SHIFT_DRAG", description: "Constrain" }, // Renamed from Shift+Drag
-                { combo: "ARROW_KEYS", description: "Nudge" }, // Renamed from Arrow Keys
-                { combo: "CONTROL_ONE", description: "Tool 1" }, // Changed from Ctrl+1/2/3/4
-                { combo: "CONTROL_TWO", description: "Tool 2" },
-                { combo: "CONTROL_THREE", description: "Tool 3" },
-                { combo: "CONTROL_FOUR", description: "Tool 4" },
-                { combo: "ALT_SHIFT_E", description: "Export" }, // Renamed from Alt+Shift+E
-                { combo: "CONTROL_ALT_T", description: "Terrain Editor" }, // Renamed from Ctrl+Alt+T
-                { combo: "CONTROL_SHIFT_R", description: "Run" }, // Renamed from Ctrl+Shift+R
-                { combo: "CONTROL_SHIFT_T", description: "Test" }, // Renamed from Ctrl+Shift+T
-                { combo: "F7", description: "Play Solo" },
-                { combo: "F5", description: "Play" },
-                { combo: "F6", description: "Server" },
-                { combo: "F8", description: "Player" },
-                { combo: "CONTROL_Q", description: "Quit" }, // Renamed from Ctrl+Q
-                { combo: "CONTROL_SHIFT_F", description: "Search All" }, // Renamed from Ctrl+Shift+F
+            "ROBLOX_STUDIO_SPECIFIC": [
+                { combo: "ARROW_KEYS_NUDGE", description: "Nudge (Arrow Keys)" },
             ],
-            "ENLISTED": [
-                { combo: "W", description: "Move Forward" },
-                { combo: "A", description: "Move Left" },
-                { combo: "S", description: "Move Backward" },
-                { combo: "D", description: "Move Right" },
-                { combo: "SPACEBAR", description: "Jump" }, // Renamed from Space
-                { combo: "LEFT_SHIFT", description: "Sprint" }, // Renamed from Shift
-                { combo: "LEFT_CONTROL", description: "Crouch" }, // Renamed from Ctrl
-                { combo: "Z", description: "Prone" },
-                { combo: "X", description: "Lean Left" },
-                { combo: "C", description: "Lean Right" },
-                { combo: "F", description: "Interact" },
-                { combo: "R", description: "Reload" },
-                { combo: "G", description: "Grenade" },
-                { combo: "T", description: "Pick Weapon" },
-                { combo: "V", description: "Melee" },
-                { combo: "B", description: "Fire Mode" },
-                { combo: "Q_E", description: "Switch Soldier" }, // Renamed from Q/E
-                { combo: "TAB", description: "Scoreboard" },
-                { combo: "M", description: "Map" },
-                { combo: "N", description: "Night Vision" },
-                { combo: "Y", description: "Orders" },
-                { combo: "L", description: "Flashlight" },
-                { combo: "ESCAPE", description: "Menu" }, // Renamed from Esc
-                { combo: "MOUSE_BUTTON_1", description: "Fire" }, // Renamed from Click
-                { combo: "RIGHT_CLICK", description: "Aim" }, // Renamed from Right Click
-                { combo: "SCROLL", description: "Change Weapon" }, // Renamed from Scroll
-                { combo: "ONE", description: "Weapon 1" }, // Changed from 1-3
-                { combo: "TWO", description: "Weapon 2" },
-                { combo: "THREE", description: "Weapon 3" },
-                { combo: "H", description: "Help" },
-                { combo: "LEFT_ALT", description: "Free Look" }, // Renamed from Alt
-                { combo: "CONTROL_SHIFT", description: "Walk" }, // Renamed from Ctrl+Shift
-                { combo: "F1", description: "Camera" },
-                { combo: "ALT_M", description: "Minimap" }, // Renamed from Alt+M
-                { combo: "CONTROL_R", description: "Reload Prone" }, // Renamed from Ctrl+R
-                { combo: "CONTROL_F1", description: "Switch Class" }, // Renamed from Ctrl+F1
-                { combo: "ALT_V", description: "Change View" }, // Renamed from Alt+V
-                { combo: "MIDDLE_CLICK", description: "Ping" }, // Renamed from Middle Mouse
-                { combo: "HOLD_T", description: "Mark Enemy" }, // Renamed from Hold T
-                { combo: "HOLD_SHIFT", description: "Sprint Long" }, // Renamed from Hold Shift
-                { combo: "HOLD_F", description: "Plant/Diffuse" }, // Renamed from Hold F
-                { combo: "CONTROL_NUMBER", description: "Squad Command" }, // Renamed from Ctrl+Number
-                { combo: "SHIFT_ONE", description: "Formation 1" }, // Changed from Shift+1-4
-                { combo: "SHIFT_TWO", description: "Formation 2" },
-                { combo: "SHIFT_THREE", description: "Formation 3" },
-                { combo: "SHIFT_FOUR", description: "Formation 4" },
-                { combo: "K", description: "Kill Feed" },
-                { combo: "U", description: "Medkit" },
-                { combo: "ONE", description: "Inventory" },
-                { combo: "BACKSPACE", description: "Suicide" },
-                { combo: "DELETE", description: "Respawn" }, // Renamed from Del
-                { combo: "F3", description: "Record" },
-                { combo: "F12", description: "Screenshot" },
-                { combo: "GRAVE_ACCENT", description: "Console" }, // Renamed from Tilde
-                { combo: "CONTROL_ALT_DELETE", description: "Force Quit" }, // Renamed from Ctrl+Alt+Delete
+            "LINUX_COMMANDS": [
+                { combo: "MACRO_LS", description: "List Directory Contents (ls)" },
+                { combo: "MACRO_CD", description: "Change Directory (cd)" },
+                { combo: "MACRO_PWD", description: "Print Working Directory (pwd)" },
+                { combo: "MACRO_MKDIR", description: "Make Directory (mkdir)" },
+                { combo: "MACRO_RM", description: "Remove File/Directory (rm)" },
+                { combo: "MACRO_CP", description: "Copy File (cp)" },
+                { combo: "MACRO_MV", description: "Move File (mv)" },
+                { combo: "MACRO_SUDO", description: "Run as Superuser (sudo)" },
+                { combo: "MACRO_MAN", description: "Manual Pages (man)" },
+                { combo: "MACRO_TOP", description: "Show Running Processes (top)" },
+                { combo: "MACRO_PS", description: "List Processes (ps)" },
+                { combo: "MACRO_KILL", description: "Terminate Process (kill)" },
+                { combo: "MACRO_GREP", description: "Search Text (grep)" },
+                { combo: "MACRO_CHMOD", description: "Change Permissions (chmod)" },
+                { combo: "MACRO_CHOWN", description: "Change Ownership (chown)" },
+                { combo: "MACRO_NANO", description: "Text Editor (nano)" },
+                { combo: "MACRO_VIM", description: "Vi Improved Editor (vim)" },
+                { combo: "MACRO_DF", description: "Disk Usage (df)" },
+                { combo: "MACRO_DU", description: "Directory Usage (du)" },
+                { combo: "MACRO_TAR", description: "Archive Files (tar)" },
+                { combo: "MACRO_ZIP_UNZIP", description: "Compress/Extract (zip/unzip)" },
+                { combo: "MACRO_SSH", description: "Remote Access (ssh)" },
+                { combo: "MACRO_SCP", description: "Secure Copy (scp)" },
+                { combo: "MACRO_WGET", description: "Download Files (wget)" },
+                { combo: "MACRO_CURL", description: "Transfer Data (curl)" },
+                { combo: "MACRO_ALIAS", description: "Create Shortcut Command (alias)" },
+                { combo: "MACRO_HISTORY", description: "Show Command History (history)" },
+                { combo: "MACRO_CLEAR", description: "Clear Terminal (clear)" },
+                { combo: "MACRO_REBOOT", description: "Reboot System (reboot)" },
+                { combo: "MACRO_SHUTDOWN", description: "Shutdown System (shutdown)" },
+                { combo: "MACRO_UPTIME", description: "Show System Uptime (uptime)" },
             ],
-            "LINUX": [
-                { combo: "CONTROL_ALT_T", description: "Open Terminal" }, // Renamed from Ctrl+Alt+T
-                { combo: "MACRO_LS", description: "List Directory Contents" }, // Renamed from ls
-                { combo: "MACRO_CD", description: "Change Directory" }, // Renamed from cd
-                { combo: "MACRO_PWD", description: "Print Working Directory" }, // Renamed from pwd
-                { combo: "MACRO_MKDIR", description: "Make Directory" }, // Renamed from mkdir
-                { combo: "MACRO_RM", description: "Remove File/Directory" }, // Renamed from rm
-                { combo: "MACRO_CP", description: "Copy File" }, // Renamed from cp
-                { combo: "MACRO_MV", description: "Move File" }, // Renamed from mv
-                { combo: "MACRO_SUDO", description: "Run Command as Superuser" }, // Renamed from sudo
-                { combo: "MACRO_MAN", description: "Manual Pages" }, // Renamed from man
-                { combo: "MACRO_TOP", description: "Show Running Processes" }, // Renamed from top
-                { combo: "MACRO_PS", description: "List Processes" }, // Renamed from ps
-                { combo: "MACRO_KILL", description: "Terminate Process" }, // Renamed from kill
-                { combo: "MACRO_GREP", description: "Search Text" }, // Renamed from grep
-                { combo: "MACRO_CHMOD", description: "Change Permissions" }, // Renamed from chmod
-                { combo: "MACRO_CHOWN", description: "Change Ownership" }, // Renamed from chown
-                { combo: "MACRO_NANO", description: "Text Editor" }, // Renamed from nano
-                { combo: "MACRO_VIM", description: "Vi Improved Editor" }, // Renamed from vim
-                { combo: "MACRO_DF", description: "Disk Usage" }, // Renamed from df
-                { combo: "MACRO_DU", description: "Directory Usage" }, // Renamed from du
-                { combo: "MACRO_TAR", description: "Archive Files" }, // Renamed from tar
-                { combo: "MACRO_ZIP_UNZIP", description: "Compress/Extract" }, // Renamed from zip/unzip
-                { combo: "MACRO_SSH", description: "Remote Access" }, // Renamed from ssh
-                { combo: "MACRO_SCP", description: "Secure Copy" }, // Renamed from scp
-                { combo: "MACRO_WGET", description: "Download Files" }, // Renamed from wget
-                { combo: "MACRO_CURL", description: "Transfer Data" }, // Renamed from curl
-                { combo: "MACRO_ALIAS", description: "Create Shortcut Command" }, // Renamed from alias
-                { combo: "MACRO_HISTORY", description: "Show Command History" }, // Renamed from history
-                { combo: "MACRO_CLEAR", description: "Clear Terminal" }, // Renamed from clear
-                { combo: "MACRO_REBOOT", description: "Restart System" }, // Renamed from reboot
-                { combo: "MACRO_SHUTDOWN", description: "Shutdown System" }, // Renamed from shutdown
-                { combo: "MACRO_UPTIME", description: "Show System Uptime" }, // Renamed from uptime
+            "KICAD_SPECIFIC": [
+                { combo: "CONTROL_SCROLL", description: "Zoom (Ctrl+Scroll)" },
+                { combo: "ALT_ONE", description: "Layer View 1 (Alt+1)" },
+                { combo: "ALT_TWO", description: "Layer View 2 (Alt+2)" },
+                { combo: "ALT_THREE", description: "Layer View 3 (Alt+3)" },
+                { combo: "ALT_FOUR", description: "Layer View 4 (Alt+4)" },
+                { combo: "ALT_FIVE", description: "Layer View 5 (Alt+5)" },
             ],
-            "CODING IDE (VSCode Style)": [
-                { combo: "CONTROL_P", description: "Quick Open File" }, // Renamed from Ctrl+P
-                { combo: "CONTROL_SHIFT_P", description: "Command Palette" }, // Renamed from Ctrl+Shift+P
-                { combo: "CONTROL_GRAVE_ACCENT", description: "Terminal Toggle" }, // Renamed from Ctrl+`
-                { combo: "CONTROL_B", description: "Sidebar Toggle" }, // Renamed from Ctrl+B
-                { combo: "CONTROL_J", description: "Panel Toggle" }, // Renamed from Ctrl+J
-                { combo: "CONTROL_SHIFT_E", description: "Explorer" }, // Renamed from Ctrl+Shift+E
-                { combo: "CONTROL_SHIFT_F", description: "Search in Files" }, // Renamed from Ctrl+Shift+F
-                { combo: "CONTROL_SHIFT_G", description: "Git" }, // Renamed from Ctrl+Shift+G
-                { combo: "CONTROL_SHIFT_D", description: "Debug" }, // Renamed from Ctrl+Shift+D
-                { combo: "CONTROL_SHIFT_X", description: "Extensions" }, // Renamed from Ctrl+Shift+X
-                { combo: "CONTROL_SPACEBAR", description: "Trigger Suggestion" }, // Renamed from Ctrl+Space
-                { combo: "CONTROL_FORWARD_SLASH", description: "Comment Line" }, // Renamed from Ctrl+/
-                { combo: "ALT_UP_ARROW", description: "Move Line Up" }, // Renamed from Alt+Up
-                { combo: "ALT_DOWN_ARROW", description: "Move Line Down" }, // Renamed from Alt+Down
-                { combo: "SHIFT_ALT_DOWN_ARROW", description: "Copy Line Down" }, // Renamed from Shift+Alt+Down
-                { combo: "CONTROL_SHIFT_K", description: "Delete Line" }, // Renamed from Ctrl+Shift+K
-                { combo: "CONTROL_D", description: "Select Next Occurrence" }, // Renamed from Ctrl+D
-                { combo: "CONTROL_L", description: "Select Line" }, // Renamed from Ctrl+L
-                { combo: "CONTROL_ENTER", description: "Insert Line Below" }, // Renamed from Ctrl+Enter
-                { combo: "CONTROL_SHIFT_ENTER", description: "Insert Line Above" }, // Renamed from Ctrl+Shift+Enter
-                { combo: "CONTROL_SHIFT_RIGHT_BRACKET", description: "Jump to Bracket" }, // Renamed from Ctrl+Shift+]
-                { combo: "CONTROL_TAB", description: "Next Editor" }, // Renamed from Ctrl+Tab
-                { combo: "CONTROL_SHIFT_TAB", description: "Previous Editor" }, // Renamed from Ctrl+Shift+Tab
-                { combo: "CONTROL_W", description: "Close Editor" }, // Renamed from Ctrl+W
+            "FUSION360_SPECIFIC": [
+                { combo: "SHIFT_SCROLL", description: "Pan (Shift+Scroll)" },
             ],
-            "KICAD": [
-                { combo: "CONTROL_N", description: "New Project" }, // Renamed from Ctrl+N
-                { combo: "CONTROL_O", description: "Open Project" }, // Renamed from Ctrl+O
-                { combo: "CONTROL_S", description: "Save" }, // Renamed from Ctrl+S
-                { combo: "CONTROL_Z", description: "Undo" }, // Renamed from Ctrl+Z
-                { combo: "CONTROL_Y", description: "Redo" }, // Renamed from Ctrl+Y
-                { combo: "CONTROL_C", description: "Copy" }, // Renamed from Ctrl+C
-                { combo: "CONTROL_V", description: "Paste" }, // Renamed from Ctrl+V
-                { combo: "CONTROL_X", description: "Cut" }, // Renamed from Ctrl+X
-                { combo: "DELETE", description: "Delete" }, // Renamed from Del
-                { combo: "R", description: "Rotate" },
-                { combo: "M", description: "Move" },
-                { combo: "E", description: "Edit Properties" },
-                { combo: "W", description: "Wire" },
-                { combo: "P", description: "Place Component" },
-                { combo: "SHIFT_SPACEBAR", description: "Cycle Units" }, // Renamed from Shift+Space
-                { combo: "PAGE_UP", description: "Zoom In" }, // Renamed from Page Up
-                { combo: "PAGE_DOWN", description: "Zoom Out" }, // Renamed from Page Down
-                { combo: "CONTROL_SCROLL", description: "Zoom" }, // Renamed from Ctrl+Scroll
-                { combo: "F1", description: "Pan Direction 1" },
-                { combo: "F2", description: "Pan Direction 2" },
-                { combo: "F3", description: "Pan Direction 3" },
-                { combo: "F4", description: "Pan Direction 4" },
-                { combo: "SPACEBAR", description: "Reset Origin" }, // Renamed from Space
-                { combo: "ALT_ONE", description: "Layer View 1" }, // Changed from Alt+1-5
-                { combo: "ALT_TWO", description: "Layer View 2" },
-                { combo: "ALT_THREE", description: "Layer View 3" },
-                { combo: "ALT_FOUR", description: "Layer View 4" },
-                { combo: "ALT_FIVE", description: "Layer View 5" },
-                { combo: "CONTROL_B", description: "Rebuild Ratsnest" }, // Renamed from Ctrl+B
-                { combo: "CONTROL_H", description: "Highlight Net" }, // Renamed from Ctrl+H
-            ],
-            "FUSION 360": [
-                { combo: "S", description: "Toolbox" },
-                { combo: "L", description: "Line" },
-                { combo: "R", description: "Rectangle" },
-                { combo: "C", description: "Circle" },
-                { combo: "D", description: "Dimension" },
-                { combo: "T", description: "Text" },
-                { combo: "M", description: "Move" },
-                { combo: "Q", description: "Press/Pull" },
-                { combo: "E", description: "Extrude" },
-                { combo: "F", description: "Fillet" },
-                { combo: "SHIFT_S", description: "Sketch Shortcuts" }, // Renamed from Shift+S
-                { combo: "CONTROL_Z", description: "Undo" }, // Renamed from Ctrl+Z
-                { combo: "CONTROL_Y", description: "Redo" }, // Renamed from Ctrl+Y
-                { combo: "CONTROL_C", description: "Copy" }, // Renamed from Ctrl+C
-                { combo: "CONTROL_V", description: "Paste" }, // Renamed from Ctrl+V
-                { combo: "DELETE", description: "Remove" }, // Renamed from Delete
-                { combo: "B", description: "Emboss" },
-                { combo: "J", description: "Joint" },
-                { combo: "H", description: "Hole" },
-                { combo: "G", description: "Grid Settings" },
-                { combo: "TAB", description: "Switch Input" },
-                { combo: "ALT_DRAG", description: "Orbit" }, // Renamed from Alt+Drag
-                { combo: "SHIFT_SCROLL", description: "Pan" }, // Renamed from Shift+Scroll
-                { combo: "SCROLL", description: "Zoom" }, // Renamed from Scroll
-                { combo: "HOME", description: "View Cube" },
-                { combo: "F6", description: "Home View" },
-                { combo: "F7", description: "Slice" },
-                { combo: "CONTROL_ONE", description: "Orthographic View 1" }, // Changed from Ctrl+1/2/3
-                { combo: "CONTROL_TWO", description: "Orthographic View 2" },
-                { combo: "CONTROL_THREE", description: "Orthographic View 3" },
-                { combo: "CONTROL_SHIFT_E", description: "Export" }, // Renamed from Ctrl+Shift+E
-                { combo: "CONTROL_S", description: "Save" }, // Renamed from Ctrl+S
-            ],
-            "CANVA": [
-                { combo: "CONTROL_C", description: "Copy" }, // Renamed from Ctrl+C
-                { combo: "CONTROL_V", description: "Paste" }, // Renamed from Ctrl+V
-                { combo: "CONTROL_X", description: "Cut" }, // Renamed from Ctrl+X
-                { combo: "CONTROL_Z", description: "Undo" }, // Renamed from Ctrl+Z
-                { combo: "CONTROL_Y", description: "Redo" }, // Renamed from Ctrl+Y
-                { combo: "CONTROL_A", description: "Select All" }, // Renamed from Ctrl+A
-                { combo: "DELETE", description: "Remove" }, // Renamed from Delete
-                { combo: "CONTROL_G", description: "Group" }, // Renamed from Ctrl+G
-                { combo: "CONTROL_U", description: "Ungroup" }, // Renamed from Ctrl+U
-                { combo: "CONTROL_D", description: "Duplicate" }, // Renamed from Ctrl+D
-                { combo: "SHIFT_ARROW", description: "Nudge" }, // Renamed from Shift+Arrow
-                { combo: "ALT_DRAG", description: "Duplicate while Dragging" }, // Renamed from Alt+Drag
-                { combo: "T", description: "Add Text" },
-                { combo: "R", description: "Add Rectangle" },
-                { combo: "L", description: "Add Line" },
-                { combo: "C", description: "Add Circle" },
-                { combo: "B", description: "Bold" },
-                { combo: "I", description: "Italic" },
-                { combo: "U", description: "Underline" },
-                { combo: "CONTROL_K", description: "Link" }, // Renamed from Ctrl+K
-                { combo: "CONTROL_SHIFT_K", description: "Unlink" }, // Renamed from Ctrl+Shift+K
-                { combo: "CONTROL_E", description: "Align Center" }, // Renamed from Ctrl+E
-                { combo: "CONTROL_L", description: "Align Left" }, // Renamed from Ctrl+L
-                { combo: "CONTROL_R", description: "Align Right" }, // Renamed from Ctrl+R
-                { combo: "CONTROL_SHIFT_M", description: "Comment" }, // Renamed from Ctrl+Shift+M
-                { combo: "ALT_LEFT_BRACKET", description: "Layer Back" }, // Renamed from Alt+[
-                { combo: "ALT_RIGHT_BRACKET", description: "Layer Front" }, // Renamed from Alt+]
-                { combo: "CONTROL_P", description: "Print" }, // Renamed from Ctrl+P
-                { combo: "CONTROL_S", description: "Save" }, // Renamed from Ctrl+S
-                { combo: "CONTROL_SHIFT_S", description: "Save As" }, // Renamed from Ctrl+Shift+S
-                { combo: "CONTROL_SHIFT_D", description: "Download" }, // Renamed from Ctrl+Shift+D
-            ],
-            "COMMON_HID_KEYS": [ // Added this category for the explicitly provided keymap
-                { combo: "A", description: "A" },
-                { combo: "B", description: "B" },
-                { combo: "C", description: "C" },
-                { combo: "ENTER", description: "Enter" },
-                { combo: "ESCAPE", description: "Escape" },
-                { combo: "TAB", description: "Tab" },
-                { combo: "SPACE", description: "Space" },
-                { combo: "UP", description: "Up Arrow" },
-                { combo: "DOWN", description: "Down Arrow" },
-                { combo: "LEFT", description: "Left Arrow" },
-                { combo: "RIGHT", description: "Right Arrow" },
-                { combo: "VOLUME_UP", description: "Volume Up" },
-                { combo: "VOLUME_DOWN", description: "Volume Down" },
-                { combo: "MUTE", description: "Mute" },
-                { combo: "PLAY_PAUSE", description: "Play/Pause" },
-                { combo: "CTRL_C", description: "Ctrl+C" },
-                { combo: "CTRL_V", description: "Ctrl+V" },
-                { combo: "CTRL_Z", description: "Ctrl+Z" },
-                { combo: "CTRL_X", description: "Ctrl+X" },
-                { combo: "CTRL_S", description: "Ctrl+S" },
-                { combo: "ALT_TAB", description: "Alt+Tab" },
-                { combo: "WIN_D", description: "Win+D" },
-                { combo: "CTRL_SHIFT_ESC", description: "Ctrl+Shift+Esc" }
-            ]
         };
 
         const NUM_LAYERS_PICO = 2; // Matches the NUM_LAYERS in the Pico code
@@ -935,23 +793,42 @@
         const KeyTester = ({ activeTab }) => {
             const { useState, useEffect } = React;
             const [pressedKeys, setPressedKeys] = useState([]);
+            const [modifierState, setModifierState] = useState({
+                ctrlKey: false,
+                shiftKey: false,
+                altKey: false,
+                metaKey: false, // Windows key or Command key on Mac
+            });
 
             useEffect(() => {
                 if (activeTab === 'keytester') {
                     const handleKeyDown = (e) => {
-                        e.preventDefault();
+                        e.preventDefault(); // Prevent default browser actions for keys
                         setPressedKeys(prev => {
                             const newKey = { key: e.key, code: e.code, timestamp: Date.now() };
-                            if (!prev.some(k => k.code === e.code && k.type === 'down')) {
-                                return [...prev, { ...newKey, type: 'down' }];
+                            // Only add if not already present to avoid duplicates for held keys
+                            if (!prev.some(k => k.code === e.code)) {
+                                return [...prev, newKey];
                             }
                             return prev;
+                        });
+                        setModifierState({
+                            ctrlKey: e.ctrlKey,
+                            shiftKey: e.shiftKey,
+                            altKey: e.altKey,
+                            metaKey: e.metaKey,
                         });
                     };
 
                     const handleKeyUp = (e) => {
                         e.preventDefault();
                         setPressedKeys(prev => prev.filter(k => k.code !== e.code));
+                        setModifierState({
+                            ctrlKey: e.ctrlKey,
+                            shiftKey: e.shiftKey,
+                            altKey: e.altKey,
+                            metaKey: e.metaKey,
+                        });
                     };
 
                     window.addEventListener('keydown', handleKeyDown);
@@ -963,27 +840,59 @@
                     };
                 } else {
                     setPressedKeys([]);
+                    setModifierState({
+                        ctrlKey: false,
+                        shiftKey: false,
+                        altKey: false,
+                        metaKey: false,
+                    });
                 }
             }, [activeTab]);
 
+            const clearPressedKeys = () => {
+                setPressedKeys([]);
+                setModifierState({
+                    ctrlKey: false,
+                    shiftKey: false,
+                    altKey: false,
+                    metaKey: false,
+                });
+            };
+
             return (
-                <div className="flex flex-col items-center w-full p-8"> {/* Added padding here */}
+                <div className="flex flex-col items-center w-full p-8">
                     <h1 className="text-4xl font-extrabold text-red-400 mb-8">KEY TESTER</h1>
-                    <p className="text-zinc-300 mb-6 text-lg">Press any key on your keyboard to see its details.</p>
-                    <div className="w-full max-w-2xl bg-zinc-700 rounded-xl p-6 shadow-lg border-2 border-zinc-600 min-h-[200px] flex flex-wrap items-center justify-center gap-4">
-                        {pressedKeys.length === 0 ? (
-                            <p className="text-zinc-400 text-xl">No keys pressed...</p>
-                        ) : (
-                            pressedKeys.map((keyInfo, index) => (
-                                <div
-                                    key={keyInfo.code + '-' + keyInfo.timestamp}
-                                    className="bg-zinc-600 rounded-lg p-4 shadow-md border border-zinc-500 flex flex-col items-center justify-center min-w-[120px]"
-                                >
-                                    <span className="text-xl font-bold text-red-300">{keyInfo.key === ' ' ? 'Space' : keyInfo.key}</span>
-                                    <span className="text-sm text-zinc-400 mt-1">{keyInfo.code}</span>
-                                </div>
-                            ))
-                        )}
+                    <p className="text-zinc-300 mb-6 text-lg text-center">Press any key on your keyboard to see its details and active modifiers.</p>
+
+                    <div className="w-full max-w-2xl bg-zinc-700 rounded-xl p-6 shadow-lg border-2 border-zinc-600 min-h-[250px] flex flex-col items-center">
+                        <div className="flex justify-center space-x-4 mb-6 w-full">
+                            <span className={`px-3 py-1 rounded-full text-sm font-semibold transition-colors duration-200 ${modifierState.ctrlKey ? 'bg-blue-600 text-white' : 'bg-zinc-600 text-zinc-300'}`}>Ctrl</span>
+                            <span className={`px-3 py-1 rounded-full text-sm font-semibold transition-colors duration-200 ${modifierState.shiftKey ? 'bg-blue-600 text-white' : 'bg-zinc-600 text-zinc-300'}`}>Shift</span>
+                            <span className={`px-3 py-1 rounded-full text-sm font-semibold transition-colors duration-200 ${modifierState.altKey ? 'bg-blue-600 text-white' : 'bg-zinc-600 text-zinc-300'}`}>Alt</span>
+                            <span className={`px-3 py-1 rounded-full text-sm font-semibold transition-colors duration-200 ${modifierState.metaKey ? 'bg-blue-600 text-white' : 'bg-zinc-600 text-zinc-300'}`}>Meta (Win/Cmd)</span>
+                        </div>
+
+                        <div className="flex-1 flex flex-wrap items-center justify-center gap-4 w-full">
+                            {pressedKeys.length === 0 ? (
+                                <p className="text-zinc-400 text-xl">No keys pressed...</p>
+                            ) : (
+                                pressedKeys.map((keyInfo, index) => (
+                                    <div
+                                        key={keyInfo.code + '-' + keyInfo.timestamp}
+                                        className="bg-zinc-600 rounded-lg p-4 shadow-md border border-zinc-500 flex flex-col items-center justify-center min-w-[120px] transform transition-transform duration-100 hover:scale-105"
+                                    >
+                                        <span className="text-xl font-bold text-red-300">{keyInfo.key === ' ' ? 'Space' : keyInfo.key === '' ? 'Unknown' : keyInfo.key}</span>
+                                        <span className="text-sm text-zinc-400 mt-1">{keyInfo.code}</span>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                        <button
+                            onClick={clearPressedKeys}
+                            className="mt-6 bg-red-600 hover:bg-red-700 px-6 py-2 rounded-xl shadow-lg transition-colors duration-200 text-lg font-semibold"
+                        >
+                            Clear Pressed Keys
+                        </button>
                     </div>
                 </div>
             );
