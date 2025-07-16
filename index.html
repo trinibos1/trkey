@@ -38,13 +38,7 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        // Explicitly get React and ReactDOM from the window object
-        const React = window.React;
-        const ReactDOM = window.ReactDOM;
-
-        // Log to console to verify they are loaded
-        console.log("React loaded:", !!React);
-        console.log("ReactDOM loaded:", !!ReactDOM);
+        // All React component code consolidated here
 
         // Constants with ALL shortcuts from the PDF, adapted for CircuitPython Keycode names
         const presets = {
@@ -361,7 +355,7 @@
             name: `Layer ${layerIdx}`,
             labels: Array(9).fill(''), // 3x3 grid, flattened to 9 labels
             keys: Array(9).fill(null), // 3x3 grid, flattened to 9 keys (null for empty)
-            // Removed 'macros' from initial structure as they are now handled separately in Pico code
+            macros: [] // Initialize with empty macros list
         }));
 
 
@@ -415,8 +409,7 @@
 
         // Sidebar component (formerly from src/components/Sidebar.js)
         const Sidebar = ({ activeTab, setActiveTab }) => {
-            // Ensure React hooks are imported within component scope
-            const { useState, useEffect } = React;
+            const { useState, useEffect } = React; // Ensure React hooks are imported within component scope
             return (
                 <div className="w-64 bg-zinc-900 p-6 flex flex-col border-r border-zinc-700 shadow-xl">
                     <div className="text-2xl font-bold text-red-500 mb-8">Trkey</div>
@@ -487,9 +480,11 @@
                             break;
                         }
                     }
-                    // For macros, use the macro name as description (even if not exported, for UI consistency)
+                    // For macros, use the macro name as description
                     if (keyCombo.startsWith("MACRO_")) {
                         const macroName = keyCombo.replace("_", " "); // e.g., "MACRO 1"
+                        // Here, we'd ideally look up the actual macro name from the macros state
+                        // For now, we'll use the generated name
                         description = macroName;
                     }
 
@@ -951,7 +946,7 @@
         function App() {
             const { useState, useEffect, useCallback } = React;
 
-            // Updated initialGrid to be multi-layered, now excluding 'macros' key
+            // Updated initialGrid to be multi-layered, now including 'macros' key
             const [keymap, setKeymap] = useState(initialMultiLayerGrid);
             const [shortcutPool, setShortcutPool] = useState(Object.fromEntries(Object.entries(presets).map(([k, v]) => [k, [...v]])));
             const [showModal, setShowModal] = useState(false);
@@ -1178,9 +1173,15 @@
                     });
                 });
 
-                // NOTE: Macros are explicitly NOT included in this export for debugging purposes.
-                // They will be hardcoded in the Pico's code.py for this iteration.
-                const fullExportData = layersForExport; 
+                const fullExportData = layersForExport; // The root is now the array of layers
+
+                // Macros are typically added to the first layer in Pico's layers.json
+                if (macros.length > 0) {
+                    if (fullExportData.length > 0) {
+                         // Ensure macros are stored as {name: "Macro X", sequence: "..."}
+                         fullExportData[0].macros = macros.map(m => ({ name: m.name, sequence: m.sequence }));
+                    }
+                }
 
                 const blob = new Blob([JSON.stringify(fullExportData, null, 2)], { type: "application/json" });
                 const url = URL.createObjectURL(blob);
@@ -1224,9 +1225,12 @@
                         });
                     });
 
-                    // NOTE: Macros are explicitly NOT included in this upload for debugging purposes.
-                    // They will be hardcoded in the Pico's code.py for this iteration.
                     const fullUploadData = layersForUpload;
+
+                    // Add macros to the first layer for upload
+                    if (macros.length > 0 && fullUploadData.length > 0) {
+                        fullUploadData[0].macros = macros.map(m => ({ name: m.name, sequence: m.sequence }));
+                    }
 
                     const json = JSON.stringify(fullUploadData);
                     const encoder = new TextEncoder();
@@ -1258,11 +1262,10 @@
                             name: `Layer ${layerIdx}`,
                             labels: Array(9).fill(''),
                             keys: Array(9).fill(null),
-                            // Removed 'macros' from initial structure as they are now handled separately in Pico code
+                            macros: []
                         }));
-                        // Macros will NOT be loaded from layers.json in this version
-                        // let loadedMacros = []; 
-                        // let maxMacroId = 0;
+                        let loadedMacros = [];
+                        let maxMacroId = 0;
 
                         parsedJson.forEach((layerData, lIdx) => {
                             if (lIdx < NUM_LAYERS_PICO) { // Only load up to NUM_LAYERS_PICO
@@ -1276,20 +1279,20 @@
                                     newKeymap[lIdx].name = layerData.name;
                                 }
 
-                                // Macros will NOT be loaded from layers.json in this version
-                                // if (layerData.macros && Array.isArray(layerData.macros)) {
-                                //     const newMacrosForLayer = layerData.macros.map((m) => {
-                                //         const id = nextMacroId + loadedMacros.length; // Assign a temporary ID
-                                //         maxMacroId = Math.max(maxMacroId, id);
-                                //         return { id: id, name: m.name, sequence: m.sequence };
-                                //     });
-                                //     loadedMacros = [...loadedMacros, ...newMacrosForLayer];
-                                // }
+                                // Load macros if present in this layer (Pico doc suggests macros per layer, typically first)
+                                if (layerData.macros && Array.isArray(layerData.macros)) {
+                                    const newMacrosForLayer = layerData.macros.map((m) => {
+                                        const id = nextMacroId + loadedMacros.length; // Assign a temporary ID
+                                        maxMacroId = Math.max(maxMacroId, id);
+                                        return { id: id, name: m.name, sequence: m.sequence };
+                                    });
+                                    loadedMacros = [...loadedMacros, ...newMacrosForLayer];
+                                }
                             }
                         });
                         setKeymap(newKeymap);
-                        // setMacros(loadedMacros); // Don't load macros from JSON for now
-                        // setNextMacroId(maxMacroId + 1); 
+                        setMacros(loadedMacros);
+                        setNextMacroId(maxMacroId + 1); // Update nextMacroId based on loaded macros
 
                         // Potentiometer config is not part of Pico's layers.json, so reset or keep default
                         setPotentiometerConfig({ enabled: false, pin: 34, function: 'volume', customAction: '' });
@@ -1464,9 +1467,7 @@
         }
 
         // Render the App component into the 'root' div
-        document.addEventListener('DOMContentLoaded', function() {
-            ReactDOM.createRoot(document.getElementById('root')).render(<App />);
-        });
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
     </script>
 </body>
 </html>
