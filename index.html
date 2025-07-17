@@ -40,6 +40,10 @@
     <script type="text/babel">
         // All React component code consolidated here
 
+        // Explicitly get React and ReactDOM from the window object
+        const React = window.React;
+        const ReactDOM = window.ReactDOM;
+
         // Constants with ALL shortcuts from the PDF, adapted for CircuitPython Keycode names
         const presets = {
             "STANDARD_KEYS": [
@@ -769,7 +773,7 @@
         };
 
         // SaveLoad component (formerly from src/components/SaveLoad.js)
-        const SaveLoad = ({ saveProfile, loadProfile, exportKeymap, uploadToDevice }) => {
+        const SaveLoad = ({ saveProfile, loadProfile, exportKeymap, uploadToDevice, isConnected, handleConnectPico, handleGetFile, handleDeleteFile, handleListFiles }) => {
             const { useState, useEffect } = React;
             return (
                 <div className="flex flex-col items-center w-full p-8"> {/* Added padding here */}
@@ -796,12 +800,43 @@
                         <div className="bg-zinc-700 rounded-xl p-4 text-zinc-300 text-center text-sm border border-zinc-600">
                             To upload to Pico: Save the exported `layers.json` file, then drag and drop it onto your `CIRCUITPY` drive.
                         </div>
-                        <button
-                            onClick={uploadToDevice}
-                            className="bg-purple-600 hover:bg-purple-700 px-6 py-3 rounded-xl shadow-lg transition-colors duration-200 text-lg font-semibold"
-                        >
-                            Upload to Device (Web Serial)
-                        </button>
+                        <h2 className="text-2xl font-bold text-red-300 mt-8 mb-4">Device Operations (Web Serial)</h2>
+                        {!isConnected ? (
+                            <button
+                                onClick={handleConnectPico}
+                                className="bg-purple-600 hover:bg-purple-700 px-6 py-3 rounded-xl shadow-lg transition-colors duration-200 text-lg font-semibold"
+                            >
+                                Connect to Device
+                            </button>
+                        ) : (
+                            <>
+                                <p className="text-green-400 text-center text-lg font-semibold">Connected to Pico!</p>
+                                <button
+                                    onClick={uploadToDevice}
+                                    className="bg-purple-600 hover:bg-purple-700 px-6 py-3 rounded-xl shadow-lg transition-colors duration-200 text-lg font-semibold"
+                                >
+                                    Upload layers.json to Device
+                                </button>
+                                <button
+                                    onClick={() => handleGetFile("layers.json")}
+                                    className="bg-purple-600 hover:bg-purple-700 px-6 py-3 rounded-xl shadow-lg transition-colors duration-200 text-lg font-semibold"
+                                >
+                                    Get layers.json from Device
+                                </button>
+                                <button
+                                    onClick={() => handleDeleteFile("layers.json")}
+                                    className="bg-purple-600 hover:bg-purple-700 px-6 py-3 rounded-xl shadow-lg transition-colors duration-200 text-lg font-semibold"
+                                >
+                                    Delete layers.json on Device
+                                </button>
+                                <button
+                                    onClick={handleListFiles}
+                                    className="bg-purple-600 hover:bg-purple-700 px-6 py-3 rounded-xl shadow-lg transition-colors duration-200 text-lg font-semibold"
+                                >
+                                    List Files on Device
+                                </button>
+                            </>
+                        )}
                     </div>
                 </div>
             );
@@ -945,6 +980,132 @@
         // Main App component (formerly from src/App.js)
         function App() {
             const { useState, useEffect, useCallback } = React;
+
+            // Web Serial state
+            const [port, setPort] = useState(null);
+            const [reader, setReader] = useState(null);
+            const [writer, setWriter] = useState(null);
+            const [isConnected, setIsConnected] = useState(false);
+            const encoder = new TextEncoder();
+            const decoder = new TextDecoder();
+
+            // Web Serial Utility Functions
+            const connectPico = async () => {
+                try {
+                    const selectedPort = await navigator.serial.requestPort();
+                    await selectedPort.open({ baudRate: 115200 });
+                    const newWriter = selectedPort.writable.getWriter();
+                    const newReader = selectedPort.readable.getReader();
+
+                    setPort(selectedPort);
+                    setWriter(newWriter);
+                    setReader(newReader);
+                    setIsConnected(true);
+                    setModalContent({
+                        title: "Connection Successful",
+                        message: "Successfully connected to Pico!"
+                    });
+
+                    // Listen for disconnect
+                    selectedPort.addEventListener('disconnect', () => {
+                        setIsConnected(false);
+                        setPort(null);
+                        setReader(null);
+                        setWriter(null);
+                        setModalContent({
+                            title: "Disconnected",
+                            message: "Pico disconnected."
+                        });
+                        setShowModal(true);
+                    });
+
+                } catch (error) {
+                    setIsConnected(false);
+                    setModalContent({
+                        title: "Connection Failed",
+                        message: "Failed to connect to Pico: " + error.message
+                    });
+                } finally {
+                    setShowModal(true);
+                }
+            };
+
+            const sendCommand = async (cmd) => {
+                if (!writer) throw new Error("Not connected to Pico.");
+                await writer.write(encoder.encode(cmd + "\n"));
+            };
+
+            const readResponse = async (stopPattern = "<END>") => {
+                let fullText = "";
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done || !value) break;
+                    const text = decoder.decode(value);
+                    fullText += text;
+                    if (fullText.includes(stopPattern)) {
+                        fullText = fullText.substring(0, fullText.indexOf(stopPattern)); // Remove stop pattern
+                        break;
+                    }
+                }
+                return fullText;
+            };
+
+            const putFile = async (filename, blob) => {
+                if (!writer) throw new Error("Not connected to Pico.");
+                await sendCommand("PUT " + filename);
+                await new Promise(r => setTimeout(r, 300)); // Give Pico time to prepare
+
+                const stream = blob.stream().getReader();
+                while (true) {
+                    const { value, done } = await stream.read();
+                    if (done) break;
+                    await writer.write(value);
+                    await new Promise(r => setTimeout(r, 10)); // Small delay for Pico buffer
+                }
+                await writer.write(encoder.encode("<EOF>\n")); // Send EOF with newline
+                await new Promise(r => setTimeout(r, 100)); // Give Pico time to process EOF
+                const response = await readResponse(); // Read confirmation from Pico
+                console.log("Pico response after PUT:", response);
+            };
+
+            const getFile = async (filename) => {
+                if (!writer) throw new Error("Not connected to Pico.");
+                await sendCommand("GET " + filename);
+                const chunks = [];
+                // Read until <EOF>
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done || !value) break;
+                    const text = decoder.decode(value, {stream: true}); // Use stream: true for partial decoding
+                    
+                    if (text.includes("<EOF>")) {
+                        const eofIndex = text.indexOf("<EOF>");
+                        const finalChunk = text.substring(0, eofIndex);
+                        chunks.push(encoder.encode(finalChunk));
+                        // After EOF, the remaining part of the value might be the response from Pico
+                        // For now, we'll just break. A more robust solution might read the rest of the buffer.
+                        break;
+                    }
+                    chunks.push(value);
+                }
+                return new Blob(chunks);
+            };
+
+            const deleteFile = async (filename) => {
+                if (!writer) throw new Error("Not connected to Pico.");
+                await sendCommand("DEL " + filename);
+                const response = await readResponse();
+                console.log("Pico response after DEL:", response);
+                return response;
+            };
+
+            const listFiles = async () => {
+                if (!writer) throw new Error("Not connected to Pico.");
+                await sendCommand("LIST");
+                const response = await readResponse();
+                console.log("Pico response after LIST:", response);
+                return response;
+            };
 
             // Updated initialGrid to be multi-layered, now including 'macros' key
             const [keymap, setKeymap] = useState(initialMultiLayerGrid);
@@ -1207,9 +1368,14 @@
                         return;
                     }
 
-                    const port = await navigator.serial.requestPort();
-                    await port.open({ baudRate: 115200 });
-                    const writer = port.writable.getWriter();
+                    if (!isConnected) {
+                        setModalContent({
+                            title: "Not Connected",
+                            message: "Please connect to your Pico device first."
+                        });
+                        setShowModal(true);
+                        return;
+                    }
 
                     // Transform the internal multi-layer keymap state to the Pico-friendly layers.json format
                     const layersForUpload = [];
@@ -1233,10 +1399,16 @@
                     }
 
                     const json = JSON.stringify(fullUploadData);
-                    const encoder = new TextEncoder();
-                    await writer.write(encoder.encode(json));
-                    writer.releaseLock();
-                    await port.close();
+                    const blob = new Blob([json], { type: "application/json" });
+
+                    setModalContent({
+                        title: "Uploading...",
+                        message: "Uploading layers.json to Pico. Please wait."
+                    });
+                    setShowModal(true);
+
+                    await putFile("layers.json", blob);
+                    
                     setModalContent({
                         title: "Upload Successful",
                         message: "Configuration uploaded successfully!"
@@ -1250,6 +1422,76 @@
                     setShowModal(true);
                 }
             };
+
+            const handleConnectPico = async () => {
+                await connectPico();
+            };
+
+            const handleGetFile = async (filename) => {
+                try {
+                    if (!isConnected) {
+                        setModalContent({ title: "Not Connected", message: "Please connect to your Pico device first." });
+                        setShowModal(true);
+                        return;
+                    }
+                    setModalContent({ title: "Downloading...", message: `Downloading ${filename} from Pico. Please wait.` });
+                    setShowModal(true);
+                    const blob = await getFile(filename);
+                    const text = await blob.text();
+                    setJsonInput(text); // Populate the settings textarea with the retrieved content
+                    setModalContent({ title: "Download Successful", message: `${filename} downloaded and loaded into settings.` });
+                } catch (err) {
+                    setModalContent({ title: "Download Failed", message: `Failed to download ${filename}: ${err.message}` });
+                } finally {
+                    setShowModal(true);
+                }
+            };
+
+            const handleDeleteFile = async (filename) => {
+                try {
+                    if (!isConnected) {
+                        setModalContent({ title: "Not Connected", message: "Please connect to your Pico device first." });
+                        setShowModal(true);
+                        return;
+                    }
+                    setModalContent({
+                        title: "Confirm Delete",
+                        message: `Are you sure you want to delete ${filename} from Pico?`,
+                        onConfirm: async () => {
+                            setShowModal(false); // Close confirmation modal
+                            setModalContent({ title: "Deleting...", message: `Deleting ${filename} from Pico. Please wait.` });
+                            setShowModal(true);
+                            const response = await deleteFile(filename);
+                            setModalContent({ title: "Delete Successful", message: `${filename} deleted: ${response}` });
+                            setShowModal(true);
+                        },
+                        onCancel: () => setShowModal(false)
+                    });
+                    setShowModal(true);
+                } catch (err) {
+                    setModalContent({ title: "Delete Failed", message: `Failed to delete ${filename}: ${err.message}` });
+                    setShowModal(true);
+                }
+            };
+
+            const handleListFiles = async () => {
+                try {
+                    if (!isConnected) {
+                        setModalContent({ title: "Not Connected", message: "Please connect to your Pico device first." });
+                        setShowModal(true);
+                        return;
+                    }
+                    setModalContent({ title: "Listing Files...", message: "Retrieving file list from Pico. Please wait." });
+                    setShowModal(true);
+                    const fileList = await listFiles();
+                    setModalContent({ title: "Files on Pico", message: fileList || "No files found." });
+                } catch (err) {
+                    setModalContent({ title: "List Files Failed", message: `Failed to list files: ${err.message}` });
+                } finally {
+                    setShowModal(true);
+                }
+            };
+
 
             // JSON Import
             const loadJsonFromTextArea = () => {
@@ -1427,6 +1669,11 @@
                                     loadProfile={loadProfile}
                                     exportKeymap={exportKeymap}
                                     uploadToDevice={uploadToDevice}
+                                    isConnected={isConnected} /* New prop */
+                                    handleConnectPico={handleConnectPico} /* New prop */
+                                    handleGetFile={handleGetFile} /* New prop */
+                                    handleDeleteFile={handleDeleteFile} /* New prop */
+                                    handleListFiles={handleListFiles} /* New prop */
                                 />
                             </div>
                         )}
