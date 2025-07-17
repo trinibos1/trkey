@@ -1030,82 +1030,80 @@
                 }
             };
 
+            // Send a command (LIST, DEL filename, etc.)
             const sendCommand = async (cmd) => {
                 if (!writer) throw new Error("Not connected to Pico.");
                 await writer.write(encoder.encode(cmd + "\n"));
             };
 
-            const readResponse = async (stopPattern = "<END>") => {
-                let fullText = "";
+            // Read response until <END> or <EOF>
+            const readResponse = async (until = "<END>") => {
+                let out = "";
                 while (true) {
-                    const { value, done } = await reader.read();
-                    if (done || !value) break;
+                    const { value } = await reader.read();
+                    if (!value) break;
                     const text = decoder.decode(value);
-                    fullText += text;
-                    if (fullText.includes(stopPattern)) {
-                        fullText = fullText.substring(0, fullText.indexOf(stopPattern)); // Remove stop pattern
-                        break;
-                    }
+                    out += text;
+                    if (out.includes(until)) break;
                 }
-                return fullText;
+                console.log("📥", out);
+                return out;
             };
 
-            const putFile = async (filename, blob) => {
+            // Upload a file to Pico
+            const putFile = async (file) => {
                 if (!writer) throw new Error("Not connected to Pico.");
-                await sendCommand("PUT " + filename);
-                await new Promise(r => setTimeout(r, 300)); // Give Pico time to prepare
+                await sendCommand("PUT " + file.name);
+                await new Promise(r => setTimeout(r, 100));
 
-                const stream = blob.stream().getReader();
-                while (true) {
-                    const { value, done } = await stream.read();
-                    if (done) break;
-                    await writer.write(value);
-                    await new Promise(r => setTimeout(r, 10)); // Small delay for Pico buffer
+                const buf = new Uint8Array(await file.arrayBuffer());
+                const chunkSize = 256;
+                for (let i = 0; i < buf.length; i += chunkSize) {
+                    await writer.write(buf.slice(i, i + chunkSize));
+                    await new Promise(r => setTimeout(r, 1));
                 }
-                await writer.write(encoder.encode("<EOF>\n")); // Send EOF with newline
-                await new Promise(r => setTimeout(r, 100)); // Give Pico time to process EOF
-                const response = await readResponse(); // Read confirmation from Pico
-                console.log("Pico response after PUT:", response);
+                await writer.write(encoder.encode("<EOF>"));
+                console.log("✅ Uploaded", file.name);
             };
 
+            // Download file from Pico
             const getFile = async (filename) => {
                 if (!writer) throw new Error("Not connected to Pico.");
                 await sendCommand("GET " + filename);
                 const chunks = [];
-                // Read until <EOF>
                 while (true) {
-                    const { value, done } = await reader.read();
-                    if (done || !value) break;
-                    const text = decoder.decode(value, {stream: true}); // Use stream: true for partial decoding
-                    
+                    const { value } = await reader.read();
+                    if (!value) break;
+                    const view = new Uint8Array(value);
+                    const text = decoder.decode(view);
                     if (text.includes("<EOF>")) {
-                        const eofIndex = text.indexOf("<EOF>");
-                        const finalChunk = text.substring(0, eofIndex);
-                        chunks.push(encoder.encode(finalChunk));
-                        // After EOF, the remaining part of the value might be the response from Pico
-                        // For now, we'll just break. A more robust solution might read the rest of the buffer.
+                        chunks.push(view.slice(0, text.indexOf("<EOF>")));
                         break;
                     }
-                    chunks.push(value);
+                    chunks.push(view);
                 }
-                return new Blob(chunks);
+                const blob = new Blob(chunks);
+                const a = document.createElement("a");
+                a.href = URL.createObjectURL(blob);
+                a.download = filename;
+                a.click();
+                return blob; // Return blob to allow further processing (e.g., loading into textarea)
             };
 
-            const deleteFile = async (filename) => {
+            // Delete a file
+            const deleteFile = async (fname) => {
                 if (!writer) throw new Error("Not connected to Pico.");
-                await sendCommand("DEL " + filename);
-                const response = await readResponse();
-                console.log("Pico response after DEL:", response);
-                return response;
+                await sendCommand("DEL " + fname);
+                await readResponse();
             };
 
+            // List all files
             const listFiles = async () => {
                 if (!writer) throw new Error("Not connected to Pico.");
                 await sendCommand("LIST");
-                const response = await readResponse();
-                console.log("Pico response after LIST:", response);
-                return response;
+                return await readResponse("<END>");
             };
+
 
             // Updated initialGrid to be multi-layered, now including 'macros' key
             const [keymap, setKeymap] = useState(initialMultiLayerGrid);
@@ -1400,6 +1398,9 @@
 
                     const json = JSON.stringify(fullUploadData);
                     const blob = new Blob([json], { type: "application/json" });
+                    
+                    // Create a File object from the Blob
+                    const fileToUpload = new File([blob], "layers.json", { type: "application/json" });
 
                     setModalContent({
                         title: "Uploading...",
@@ -1407,7 +1408,7 @@
                     });
                     setShowModal(true);
 
-                    await putFile("layers.json", blob);
+                    await putFile(fileToUpload); // Pass the File object
                     
                     setModalContent({
                         title: "Upload Successful",
@@ -1436,9 +1437,9 @@
                     }
                     setModalContent({ title: "Downloading...", message: `Downloading ${filename} from Pico. Please wait.` });
                     setShowModal(true);
-                    const blob = await getFile(filename);
+                    const blob = await getFile(filename); // getFile now directly downloads
                     const text = await blob.text();
-                    setJsonInput(text); // Populate the settings textarea with the retrieved content
+                    setJsonInput(text); // Also populate the settings textarea with the retrieved content
                     setModalContent({ title: "Download Successful", message: `${filename} downloaded and loaded into settings.` });
                 } catch (err) {
                     setModalContent({ title: "Download Failed", message: `Failed to download ${filename}: ${err.message}` });
@@ -1461,8 +1462,8 @@
                             setShowModal(false); // Close confirmation modal
                             setModalContent({ title: "Deleting...", message: `Deleting ${filename} from Pico. Please wait.` });
                             setShowModal(true);
-                            const response = await deleteFile(filename);
-                            setModalContent({ title: "Delete Successful", message: `${filename} deleted: ${response}` });
+                            await deleteFile(filename); // deleteFile now handles its own response logging
+                            setModalContent({ title: "Delete Successful", message: `${filename} deleted.` });
                             setShowModal(true);
                         },
                         onCancel: () => setShowModal(false)
@@ -1483,7 +1484,7 @@
                     }
                     setModalContent({ title: "Listing Files...", message: "Retrieving file list from Pico. Please wait." });
                     setShowModal(true);
-                    const fileList = await listFiles();
+                    const fileList = await listFiles(); // listFiles now handles its own response logging
                     setModalContent({ title: "Files on Pico", message: fileList || "No files found." });
                 } catch (err) {
                     setModalContent({ title: "List Files Failed", message: `Failed to list files: ${err.message}` });
