@@ -773,7 +773,7 @@
         };
 
         // SaveLoad component (formerly from src/components/SaveLoad.js)
-        const SaveLoad = ({ saveProfile, loadProfile, exportKeymap, uploadToDevice, isConnected, handleConnectPico, handleGetFile, handleDeleteFile, handleListFiles }) => {
+        const SaveLoad = ({ saveProfile, loadProfile, exportKeymap, uploadToDevice, isConnected, handleConnectPico, handleGetFile, handleDeleteFile, logs, clearLogs, showLogDropdown, toggleLogDropdown }) => {
             const { useState, useEffect } = React;
             return (
                 <div className="flex flex-col items-center w-full p-8"> {/* Added padding here */}
@@ -821,7 +821,7 @@
                                     onClick={() => handleGetFile("layers.json")}
                                     className="bg-purple-600 hover:bg-purple-700 px-6 py-3 rounded-xl shadow-lg transition-colors duration-200 text-lg font-semibold"
                                 >
-                                    Get layers.json from Device
+                                    Check layers.json on Device
                                 </button>
                                 <button
                                     onClick={() => handleDeleteFile("layers.json")}
@@ -829,14 +829,37 @@
                                 >
                                     Delete layers.json on Device
                                 </button>
-                                <button
-                                    onClick={handleListFiles}
-                                    className="bg-purple-600 hover:bg-purple-700 px-6 py-3 rounded-xl shadow-lg transition-colors duration-200 text-lg font-semibold"
-                                >
-                                    List Files on Device
-                                </button>
                             </>
                         )}
+
+                        {/* Log Display Dropdown */}
+                        <div className="mt-8 w-full">
+                            <button
+                                onClick={toggleLogDropdown}
+                                className="w-full bg-zinc-600 hover:bg-zinc-700 px-6 py-3 rounded-xl shadow-lg transition-colors duration-200 text-lg font-semibold flex justify-between items-center"
+                            >
+                                Show Device Log
+                                <svg className={`w-5 h-5 transition-transform duration-200 ${showLogDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </button>
+                            {showLogDropdown && (
+                                <div className="bg-zinc-700 rounded-xl p-4 mt-4 shadow-lg border border-zinc-600">
+                                    <textarea
+                                        readOnly
+                                        value={logs.join('\n')}
+                                        className="w-full h-48 bg-zinc-800 border border-zinc-600 rounded-md p-3 text-white font-mono text-sm resize-y custom-scrollbar"
+                                        placeholder="Device log messages will appear here..."
+                                    ></textarea>
+                                    <button
+                                        onClick={clearLogs}
+                                        className="mt-3 bg-red-600 hover:bg-red-700 px-4 py-2 rounded-xl shadow-lg transition-colors duration-200 text-sm font-semibold w-full"
+                                    >
+                                        Clear Log
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             );
@@ -989,9 +1012,27 @@
             const encoder = new TextEncoder();
             const decoder = new TextDecoder();
 
+            // Log state
+            const [logs, setLogs] = useState([]);
+            const [showLogDropdown, setShowLogDropdown] = useState(false);
+
+            const addLog = (message, type = 'info') => {
+                const timestamp = new Date().toLocaleTimeString();
+                setLogs(prevLogs => [`[${timestamp}] [${type.toUpperCase()}] ${message}`, ...prevLogs].slice(0, 50)); // Keep last 50 logs
+            };
+
+            const clearLogs = () => {
+                setLogs([]);
+            };
+
+            const toggleLogDropdown = () => {
+                setShowLogDropdown(prev => !prev);
+            };
+
             // Web Serial Utility Functions
             const connectPico = async () => {
                 try {
+                    addLog("Attempting to connect to Pico...", "info");
                     const selectedPort = await navigator.serial.requestPort();
                     await selectedPort.open({ baudRate: 115200 });
                     const newWriter = selectedPort.writable.getWriter();
@@ -1005,6 +1046,7 @@
                         title: "Connection Successful",
                         message: "Successfully connected to Pico!"
                     });
+                    addLog("Successfully connected to Pico!", "success");
 
                     // Listen for disconnect
                     selectedPort.addEventListener('disconnect', () => {
@@ -1016,6 +1058,7 @@
                             title: "Disconnected",
                             message: "Pico disconnected."
                         });
+                        addLog("Pico disconnected.", "warn");
                         setShowModal(true);
                     });
 
@@ -1025,6 +1068,7 @@
                         title: "Connection Failed",
                         message: "Failed to connect to Pico: " + error.message
                     });
+                    addLog(`Failed to connect to Pico: ${error.message}`, "error");
                 } finally {
                     setShowModal(true);
                 }
@@ -1032,7 +1076,11 @@
 
             // Send a command (LIST, DEL filename, etc.)
             const sendCommand = async (cmd) => {
-                if (!writer) throw new Error("Not connected to Pico.");
+                if (!writer) {
+                    addLog("Not connected to Pico. Cannot send command.", "error");
+                    throw new Error("Not connected to Pico.");
+                }
+                addLog(`Sending command: ${cmd}`, "info");
                 await writer.write(encoder.encode(cmd + "\n"));
             };
 
@@ -1046,13 +1094,17 @@
                     out += text;
                     if (out.includes(until)) break;
                 }
-                console.log("📥", out);
+                addLog(`Received response (until '${until}'):\n${out}`, "info");
                 return out;
             };
 
             // Upload a file to Pico
             const putFile = async (file) => {
-                if (!writer) throw new Error("Not connected to Pico.");
+                if (!writer) {
+                    addLog("Not connected to Pico. Cannot upload file.", "error");
+                    throw new Error("Not connected to Pico.");
+                }
+                addLog(`Initiating upload for ${file.name}...`, "info");
                 await sendCommand("PUT " + file.name);
                 await new Promise(r => setTimeout(r, 100));
 
@@ -1063,12 +1115,16 @@
                     await new Promise(r => setTimeout(r, 1));
                 }
                 await writer.write(encoder.encode("<EOF>"));
-                console.log("✅ Uploaded", file.name);
+                addLog(`Uploaded ${file.name} chunks. Waiting for Pico confirmation.`, "info");
             };
 
-            // Download file from Pico
+            // Download file from Pico (modified to not trigger download, just return content)
             const getFile = async (filename) => {
-                if (!writer) throw new Error("Not connected to Pico.");
+                if (!writer) {
+                    addLog("Not connected to Pico. Cannot get file.", "error");
+                    throw new Error("Not connected to Pico.");
+                }
+                addLog(`Initiating request for ${filename}...`, "info");
                 await sendCommand("GET " + filename);
                 const chunks = [];
                 while (true) {
@@ -1083,25 +1139,20 @@
                     chunks.push(view);
                 }
                 const blob = new Blob(chunks);
-                const a = document.createElement("a");
-                a.href = URL.createObjectURL(blob);
-                a.download = filename;
-                a.click();
+                addLog(`Received content for ${filename}.`, "success");
                 return blob; // Return blob to allow further processing (e.g., loading into textarea)
             };
 
             // Delete a file
             const deleteFile = async (fname) => {
-                if (!writer) throw new Error("Not connected to Pico.");
+                if (!writer) {
+                    addLog("Not connected to Pico. Cannot delete file.", "error");
+                    throw new Error("Not connected to Pico.");
+                }
+                addLog(`Attempting to delete ${fname}...`, "info");
                 await sendCommand("DEL " + fname);
-                await readResponse();
-            };
-
-            // List all files
-            const listFiles = async () => {
-                if (!writer) throw new Error("Not connected to Pico.");
-                await sendCommand("LIST");
-                return await readResponse("<END>");
+                const response = await readResponse();
+                addLog(`Delete response for ${fname}: ${response}`, "info");
             };
 
 
@@ -1148,6 +1199,7 @@
                     droppedItem = JSON.parse(data);
                 } catch (error) {
                     console.error("Failed to parse dropped data:", error);
+                    addLog(`Failed to parse dropped data: ${error.message}`, "error");
                     setDraggedShortcut(null);
                     return;
                 }
@@ -1185,6 +1237,7 @@
                 setKeymap(newKeymap);
                 setDraggedShortcut(null);
                 setSelectedKeymapCell(null); // Clear any active cell selection after drag-drop
+                addLog(`Key assigned to Layer ${currentLayer}, Row ${row}, Col ${col}.`, "info");
             };
 
 
@@ -1219,6 +1272,7 @@
                 });
                 setKeymap(updatedKeymap);
                 setSelectedKeymapCell(null); // Clear selection if the cleared cell was selected
+                addLog(`Keymap cell Layer ${currentLayer}, Row ${rIdx}, Col ${cIdx} cleared.`, "info");
             };
 
             // New handler for clicking a keymap cell
@@ -1226,9 +1280,11 @@
                 // If the clicked cell is already selected, deselect it
                 if (selectedKeymapCell && selectedKeymapCell.row === row && selectedKeymapCell.col === col && selectedKeymapCell.layer === layer) {
                     setSelectedKeymapCell(null);
+                    addLog(`Deselected keymap cell Layer ${layer}, Row ${row}, Col ${col}.`, "info");
                 } else {
                     // Otherwise, select this cell
                     setSelectedKeymapCell({ row, col, layer });
+                    addLog(`Selected keymap cell Layer ${layer}, Row ${row}, Col ${col}.`, "info");
                 }
             };
 
@@ -1242,6 +1298,7 @@
                     newKeymap[layer].labels[flatIndex] = shortcut.description; // Store description as label
                     setKeymap(newKeymap);
                     setSelectedKeymapCell(null); // Clear selection after assignment
+                    addLog(`Assigned "${shortcut.combo}" to Layer ${layer}, Row ${row}, Col ${col}.`, "info");
                 } else {
                     // Optionally, you could show a modal or message if no cell is selected
                     setModalContent({
@@ -1249,6 +1306,7 @@
                         message: "Please click a keymap cell first to select it, then click a shortcut to assign it."
                     });
                     setShowModal(true);
+                    addLog("Attempted to assign shortcut without selecting a keymap cell.", "warn");
                 }
             };
 
@@ -1266,8 +1324,12 @@
                         setKeymap(updatedKeymap);
                         setSelectedKeymapCell(null); // Clear any active cell selection
                         setShowModal(false);
+                        addLog(`All keys on Layer ${currentLayer} cleared.`, "info");
                     },
-                    onCancel: () => setShowModal(false)
+                    onCancel: () => {
+                        setShowModal(false);
+                        addLog(`Clear Layer ${currentLayer} cancelled.`, "info");
+                    }
                 });
                 setShowModal(true);
             };
@@ -1286,6 +1348,7 @@
                     message: "Profile saved to browser storage."
                 });
                 setShowModal(true);
+                addLog("Profile saved to browser storage.", "info");
             };
 
             const loadProfile = () => {
@@ -1298,6 +1361,7 @@
                     } else {
                         setKeymap(initialMultiLayerGrid); // Fallback to empty multi-layer grid
                         console.warn("Loaded keymap structure mismatch, resetting to initial multi-layer grid.");
+                        addLog("Loaded keymap structure mismatch, resetting to initial multi-layer grid.", "warn");
                     }
                     setPotentiometerConfig(profileData.potentiometerConfig || { enabled: false, pin: 34, function: 'volume', customAction: '' });
                     setMacros(profileData.macros || []);
@@ -1305,11 +1369,13 @@
                         title: "Profile Loaded",
                         message: "Profile loaded successfully."
                     });
+                    addLog("Profile loaded from browser storage.", "info");
                 } else {
                     setModalContent({
                         title: "No Profile Found",
                         message: "No saved profile found."
                     });
+                    addLog("No saved profile found in browser storage.", "info");
                 }
                 setShowModal(true);
             };
@@ -1353,6 +1419,7 @@
                     message: "Configuration exported as layers.json. Drag this file onto your CIRCUITPY drive."
                 });
                 setShowModal(true);
+                addLog("Configuration exported as layers.json.", "info");
             };
 
             const uploadToDevice = async () => {
@@ -1363,6 +1430,7 @@
                             message: "Your browser does not support the Web Serial API. Please use a Chromium-based browser (e.g., Chrome, Edge) to upload to device."
                         });
                         setShowModal(true);
+                        addLog("Web Serial API not supported.", "error");
                         return;
                     }
 
@@ -1372,6 +1440,7 @@
                             message: "Please connect to your Pico device first."
                         });
                         setShowModal(true);
+                        addLog("Not connected to Pico for upload.", "warn");
                         return;
                     }
 
@@ -1407,6 +1476,7 @@
                         message: "Uploading layers.json to Pico. Please wait."
                     });
                     setShowModal(true);
+                    addLog("Starting layers.json upload to Pico...", "info");
 
                     await putFile(fileToUpload); // Pass the File object
                     
@@ -1414,11 +1484,13 @@
                         title: "Upload Successful",
                         message: "Configuration uploaded successfully!"
                     });
+                    addLog("Configuration uploaded successfully!", "success");
                 } catch (err) {
                     setModalContent({
                         title: "Upload Failed",
                         message: "Failed to upload: " + err.message
                     });
+                    addLog(`Upload failed: ${err.message}`, "error");
                 } finally {
                     setShowModal(true);
                 }
@@ -1433,16 +1505,21 @@
                     if (!isConnected) {
                         setModalContent({ title: "Not Connected", message: "Please connect to your Pico device first." });
                         setShowModal(true);
+                        addLog("Not connected to Pico for file check.", "warn");
                         return;
                     }
-                    setModalContent({ title: "Downloading...", message: `Downloading ${filename} from Pico. Please wait.` });
+                    setModalContent({ title: "Checking...", message: `Checking ${filename} on Pico. Please wait.` });
                     setShowModal(true);
-                    const blob = await getFile(filename); // getFile now directly downloads
+                    addLog(`Starting check of ${filename} on Pico...`, "info");
+                    const blob = await getFile(filename); // getFile now just returns blob
                     const text = await blob.text();
-                    setJsonInput(text); // Also populate the settings textarea with the retrieved content
-                    setModalContent({ title: "Download Successful", message: `${filename} downloaded and loaded into settings.` });
+                    setJsonInput(text); // Populate the settings textarea with the retrieved content
+                    setActiveTab('settings'); // Switch to settings tab to show the content
+                    setModalContent({ title: "Check Successful", message: `${filename} content loaded into settings tab.` });
+                    addLog(`${filename} content loaded into settings tab.`, "success");
                 } catch (err) {
-                    setModalContent({ title: "Download Failed", message: `Failed to download ${filename}: ${err.message}` });
+                    setModalContent({ title: "Check Failed", message: `Failed to check ${filename}: ${err.message}` });
+                    addLog(`Check of ${filename} failed: ${err.message}`, "error");
                 } finally {
                     setShowModal(true);
                 }
@@ -1453,6 +1530,7 @@
                     if (!isConnected) {
                         setModalContent({ title: "Not Connected", message: "Please connect to your Pico device first." });
                         setShowModal(true);
+                        addLog("Not connected to Pico for file deletion.", "warn");
                         return;
                     }
                     setModalContent({
@@ -1462,33 +1540,21 @@
                             setShowModal(false); // Close confirmation modal
                             setModalContent({ title: "Deleting...", message: `Deleting ${filename} from Pico. Please wait.` });
                             setShowModal(true);
+                            addLog(`Confirming deletion of ${filename}...`, "info");
                             await deleteFile(filename); // deleteFile now handles its own response logging
                             setModalContent({ title: "Delete Successful", message: `${filename} deleted.` });
+                            addLog(`${filename} deleted successfully.`, "success");
                             setShowModal(true);
                         },
-                        onCancel: () => setShowModal(false)
+                        onCancel: () => {
+                            setShowModal(false);
+                            addLog(`Deletion of ${filename} cancelled.`, "info");
+                        }
                     });
                     setShowModal(true);
                 } catch (err) {
                     setModalContent({ title: "Delete Failed", message: `Failed to delete ${filename}: ${err.message}` });
-                    setShowModal(true);
-                }
-            };
-
-            const handleListFiles = async () => {
-                try {
-                    if (!isConnected) {
-                        setModalContent({ title: "Not Connected", message: "Please connect to your Pico device first." });
-                        setShowModal(true);
-                        return;
-                    }
-                    setModalContent({ title: "Listing Files...", message: "Retrieving file list from Pico. Please wait." });
-                    setShowModal(true);
-                    const fileList = await listFiles(); // listFiles now handles its own response logging
-                    setModalContent({ title: "Files on Pico", message: fileList || "No files found." });
-                } catch (err) {
-                    setModalContent({ title: "List Files Failed", message: `Failed to list files: ${err.message}` });
-                } finally {
+                    addLog(`Deletion of ${filename} failed: ${err.message}`, "error");
                     setShowModal(true);
                 }
             };
@@ -1545,17 +1611,20 @@
                             title: "JSON Loaded",
                             message: "Configuration loaded from text area successfully (layers.json format)."
                         });
+                        addLog("Configuration loaded from text area successfully.", "success");
                     } else {
                         setModalContent({
                             title: "Invalid JSON",
                             message: "The pasted JSON does not contain a valid layers.json array structure."
                         });
+                        addLog("Invalid JSON structure for layers.json.", "error");
                     }
                 } catch (error) {
                     setModalContent({
                         title: "JSON Parsing Error",
                         message: "Failed to parse JSON: " + error.message
                     });
+                    addLog(`JSON parsing error: ${error.message}`, "error");
                 } finally {
                     setShowModal(true);
                 }
@@ -1564,27 +1633,43 @@
             // Macro functions
             const addMacro = () => {
                 const name = prompt("Enter macro name (e.g., Macro 1):");
-                if (!name) return;
+                if (!name) {
+                    addLog("Macro creation cancelled (no name provided).", "info");
+                    return;
+                }
                 const sequence = prompt("Enter macro sequence (e.g., 'Hello World!'):");
                 if (sequence) {
                     setMacros(prev => [...prev, { id: nextMacroId, name, sequence }]);
                     setNextMacroId(prev => prev + 1);
+                    addLog(`Macro "${name}" added.`, "info");
+                } else {
+                    addLog("Macro creation cancelled (no sequence provided).", "info");
                 }
             };
 
             const editMacro = (id) => {
                 const macroToEdit = macros.find(m => m.id === id);
-                if (!macroToEdit) return;
+                if (!macroToEdit) {
+                    addLog(`Attempted to edit non-existent macro with ID: ${id}.`, "warn");
+                    return;
+                }
 
                 const newName = prompt(`Edit name for "${macroToEdit.name}":`, macroToEdit.name);
-                if (newName === null) return;
+                if (newName === null) {
+                    addLog(`Edit for macro "${macroToEdit.name}" cancelled (name).`, "info");
+                    return;
+                }
 
                 const newSequence = prompt(`Edit sequence for "${macroToEdit.name}":`, macroToEdit.sequence);
-                if (newSequence === null) return;
+                if (newSequence === null) {
+                    addLog(`Edit for macro "${macroToEdit.name}" cancelled (sequence).`, "info");
+                    return;
+                }
 
                 setMacros(prev => prev.map(m =>
                     m.id === id ? { ...m, name: newName, sequence: newSequence } : m
                 ));
+                addLog(`Macro "${macroToEdit.name}" (ID: ${id}) updated.`, "info");
             };
 
             const deleteMacro = (id) => {
@@ -1594,8 +1679,12 @@
                     onConfirm: () => {
                         setMacros(prev => prev.filter(m => m.id !== id));
                         setShowModal(false);
+                        addLog(`Macro with ID: ${id} deleted.`, "info");
                     },
-                    onCancel: () => setShowModal(false)
+                    onCancel: () => {
+                        setShowModal(false);
+                        addLog(`Deletion of macro with ID: ${id} cancelled.`, "info");
+                    }
                 });
                 setShowModal(true);
             };
@@ -1672,9 +1761,12 @@
                                     uploadToDevice={uploadToDevice}
                                     isConnected={isConnected} /* New prop */
                                     handleConnectPico={handleConnectPico} /* New prop */
-                                    handleGetFile={handleGetFile} /* New prop */
+                                    handleGetFile={handleGetFile} /* Modified prop */
                                     handleDeleteFile={handleDeleteFile} /* New prop */
-                                    handleListFiles={handleListFiles} /* New prop */
+                                    logs={logs} /* New prop */
+                                    clearLogs={clearLogs} /* New prop */
+                                    showLogDropdown={showLogDropdown} /* New prop */
+                                    toggleLogDropdown={toggleLogDropdown} /* New prop */
                                 />
                             </div>
                         )}
